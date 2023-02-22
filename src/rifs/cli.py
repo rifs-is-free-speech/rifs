@@ -98,10 +98,10 @@ def download_noise(ctx, noise_pack):
 def download_dataset(ctx, dataset):
     """Download rifs DATASET"""
     if not ctx.obj["quiet"]:
-        click.echo(f"Downloading {dataset}")
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
             click.echo("\tdataset: " + dataset)
+        click.echo(f"Downloading {dataset}")
 
     datasets[dataset].download(
         target_folder=join(abspath(ctx.obj["data_path"]), "raw"),
