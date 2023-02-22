@@ -3,9 +3,12 @@ The CLI is written with click."""
 
 import click
 from art import text2art
+from os.path import join, abspath
 
 from rifs.utils import is_package_installed
 from rifs import __version__
+
+from rifsdatasets import datasets
 
 
 @click.group(chain=True, invoke_without_command=True)
@@ -45,6 +48,14 @@ def cli(
 ):
     """CLI for rifs package. Contains all the commands that the library supports.
     The CLI is written with click."""
+    if version:
+        click.echo(__version__)
+        exit(0)
+    if not ctx.invoked_subcommand:
+        click.echo(text2art("rifs") + "Welcome to the cli of rifs is free speech.")
+        click.echo(cli.get_help(ctx))
+        exit(0)
+
     ctx.ensure_object(dict)
     params = [
         (verbose, "verbose"),
@@ -57,12 +68,10 @@ def cli(
     ]
     for param, param_name in params:
         ctx.obj[param_name] = param
-    if version:
-        click.echo(__version__)
-        exit(0)
+
     if not quiet:
-        click.echo(text2art("RiFS") + "Welcome to the CLI of RiFS is Free Speech.")
         if verbose:
+            click.echo(text2art("rifs") + "Welcome to the cli of rifs is free speech.")
             click.echo("Verbose output is enabled")
             click.echo("Global parameters:")
             for param, param_name in params:
@@ -70,17 +79,33 @@ def cli(
 
 
 @cli.command()
-@click.option("--noise-pack", required=True, help="Name of the noise pack to download.")
+@click.argument("noise-pack", nargs=1)
 @click.pass_context
-def download(ctx, noise_pack):
-    """Download noise packs from FreeSound.org"""
+def download_noise(ctx, noise_pack):
+    """Download NOISE-PACK from FreeSound.org"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
-            click.echo("Download paramers:")
+            click.echo("Download parameters:")
             click.echo("\tnoise_pack: " + noise_pack)
         click.echo(f"Trying to download {noise_pack} noise pack from FreeSound.org")
 
+@cli.command()
+@click.argument("dataset", nargs=1, type=click.Choice(datasets.keys(), case_sensitive=False))
+@click.pass_context
+def download_dataset(ctx, dataset):
+    """Download rifs DATASET"""
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Download parameters:")
+            click.echo("\tdataset: " + dataset)
 
+    datasets[dataset].download(
+        target_folder=join(
+            abspath(ctx.obj["data_path"]),
+            'raw'
+        ),
+        verbose=ctx.obj["verbose"],
+    )
 
 @cli.command()
 @click.option(
@@ -124,9 +149,12 @@ def pretrain(ctx):
 @click.pass_context
 def finetune(ctx, pretrained_model, hours, minutes):
     """Finetune model"""
-    if not is_package_installed("transformers"):
-        click.echo("Please install transformers package to use this command.")
-        exit(1)
+    requirements = ['transformers', 'torch', 'soundfile', 'librosa']
+    for package in requirements:
+        if not is_package_installed(package):
+            click.echo(f"Please install the '{package}' package to use this command.")
+            exit(1)
+
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Finetune parameters:")

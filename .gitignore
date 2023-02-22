@@ -141,6 +141,7 @@ sounds/
 .idea/
 .vscode/
 notebooks/
+noise/
 
 # Mac file
 .DS_Store
