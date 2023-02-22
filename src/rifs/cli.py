@@ -89,8 +89,11 @@ def download_noise(ctx, noise_pack):
             click.echo("\tnoise_pack: " + noise_pack)
         click.echo(f"Trying to download {noise_pack} noise pack from FreeSound.org")
 
+
 @cli.command()
-@click.argument("dataset", nargs=1, type=click.Choice(datasets.keys(), case_sensitive=False))
+@click.argument(
+    "dataset", nargs=1, type=click.Choice(datasets.keys(), case_sensitive=False)
+)
 @click.pass_context
 def download_dataset(ctx, dataset):
     """Download rifs DATASET"""
@@ -100,12 +103,10 @@ def download_dataset(ctx, dataset):
             click.echo("\tdataset: " + dataset)
 
     datasets[dataset].download(
-        target_folder=join(
-            abspath(ctx.obj["data_path"]),
-            'raw'
-        ),
+        target_folder=join(abspath(ctx.obj["data_path"]), "raw"),
         verbose=ctx.obj["verbose"],
     )
+
 
 @cli.command()
 @click.option(
@@ -131,8 +132,6 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion):
             click.echo(f"\twith_voice_conversion: {with_voice_conversion}")
 
 
-
-
 @cli.command()
 @click.pass_context
 def pretrain(ctx):
@@ -149,7 +148,7 @@ def pretrain(ctx):
 @click.pass_context
 def finetune(ctx, pretrained_model, hours, minutes):
     """Finetune model"""
-    requirements = ['transformers', 'torch', 'soundfile', 'librosa']
+    requirements = ["transformers", "torch", "soundfile", "librosa"]
     for package in requirements:
         if not is_package_installed(package):
             click.echo(f"Please install the '{package}' package to use this command.")
