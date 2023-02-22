@@ -105,6 +105,7 @@ def download_dataset(ctx, dataset):
     datasets[dataset].download(
         target_folder=join(abspath(ctx.obj["data_path"]), "raw"),
         verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
     )
 
 
