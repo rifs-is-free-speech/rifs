@@ -8,7 +8,9 @@ from os.path import join, abspath
 from rifs.utils import is_package_installed
 from rifs import __version__
 
-from rifsdatasets import datasets
+from rifsdatasets import all_datasets
+
+from rifsalignment import align_csv, alignment_methods
 
 
 @click.group(chain=True, invoke_without_command=True)
@@ -92,7 +94,7 @@ def download_noise(ctx, noise_pack):
 
 @cli.command()
 @click.argument(
-    "dataset", nargs=1, type=click.Choice(datasets.keys(), case_sensitive=False)
+    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
 )
 @click.pass_context
 def download_dataset(ctx, dataset):
@@ -103,10 +105,41 @@ def download_dataset(ctx, dataset):
             click.echo("\tdataset: " + dataset)
         click.echo(f"Downloading {dataset}")
 
-    datasets[dataset].download(
+    all_datasets[dataset].download(
         target_folder=join(abspath(ctx.obj["data_path"]), "raw"),
         verbose=ctx.obj["verbose"],
         quiet=ctx.obj["quiet"],
+    )
+
+
+@cli.command()
+@click.option(
+    "--alignment-method",
+    default="ctc",
+    help="Alignment method.",
+    type=click.Choice(alignment_methods.keys(), case_sensitive=False),
+)
+@click.option(
+    "--model",
+    help="The path to the model to use for alignment. Can be a huggingface model or a local path.",
+    type=str,
+)
+@click.argument(
+    "dataset", nargs=1, type=click.Choice(all_datasets.keys()), case_sensitive=False
+)
+@click.pass_context
+def align(ctx, alignment_method, dataset, model):
+    """Align DATASET"""
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Align parameters:")
+            click.echo("\tdataset: " + dataset)
+        click.echo(f"Aligning {dataset}")
+
+    align_csv(
+        data_path=join(abspath(ctx.obj["data_path"]), "raw", dataset, "all.csv"),
+        align_method=alignment_methods[alignment_method],
+        model=model,
     )
 
 
