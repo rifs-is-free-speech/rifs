@@ -12,6 +12,8 @@ from rifsdatasets import all_datasets
 
 from rifsalignment import align_csv, alignment_methods
 
+all_datasets["dummydataset"] = None
+
 
 @click.group(chain=True, invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Prints the version of the package.")
@@ -115,7 +117,7 @@ def download_dataset(ctx, dataset):
 @cli.command()
 @click.option(
     "--alignment-method",
-    default="ctc",
+    default=list(alignment_methods.keys())[0],
     help="Alignment method.",
     type=click.Choice(alignment_methods.keys(), case_sensitive=False),
 )
@@ -125,10 +127,10 @@ def download_dataset(ctx, dataset):
     type=str,
 )
 @click.argument(
-    "dataset", nargs=1, type=click.Choice(all_datasets.keys()), case_sensitive=False
+    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
 )
 @click.pass_context
-def align(ctx, alignment_method, dataset, model):
+def align(ctx, alignment_method, model, dataset):
     """Align DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
@@ -137,10 +139,14 @@ def align(ctx, alignment_method, dataset, model):
         click.echo(f"Aligning {dataset}")
 
     align_csv(
-        data_path=join(abspath(ctx.obj["data_path"]), "raw", dataset, "all.csv"),
+        data_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
         align_method=alignment_methods[alignment_method],
         model=model,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
     )
+
+    print(f"Finished aligning the {dataset} dataset!")
 
 
 @cli.command()
