@@ -8,11 +8,9 @@ from os.path import join, abspath
 from rifs.utils import is_package_installed
 from rifs import __version__
 
+# from rifs.fairseq import all_models
 from rifsdatasets import all_datasets
-
 from rifsalignment import align_csv, alignment_methods
-
-all_datasets["dummydataset"] = None
 
 
 @click.group(chain=True, invoke_without_command=True)
