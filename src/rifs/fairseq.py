@@ -1,15 +1,16 @@
-""" Interface for fairseq pre-training. 
+""" Interface for fairseq pre-training.
 Contains the commands found fairseq/examples/...
 """
 
+
 def run_fairseq_pretrain(model_dict: dict, ctx: dict):
-    """ Run fairseq pre-training. 
+    """Run fairseq pre-training.
 
     Parameters:
     -----------
     model_dict: dict
         Dictionary of arguments to pass to fairseq pre-training.
-            
+
     ctx: dict
         Dictionary of rifs context arguments.
 
@@ -17,17 +18,15 @@ def run_fairseq_pretrain(model_dict: dict, ctx: dict):
     --------
     None
     """
-    if ctx['verbose']:
-        print('Running fairseq pre-training...')
-    
-    
+    if ctx["verbose"]:
+        print("Running fairseq pre-training...")
 
 
 all_models = {
     "wav2vec2_base": {
-        "help_text" : "wav2vec2.0 base model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--config-name":"wav2vec2_base_librispeech",
+        "help_text": "wav2vec2.0 base model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--config-name": "wav2vec2_base_librispeech",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
             "task.data": None,
@@ -39,9 +38,9 @@ all_models = {
         "x/k": 64,
     },
     "wav2vec2_large": {
-        "help_text" : "wav2vec2.0 large model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--config-name":"wav2vec2_large_librivox",
+        "help_text": "wav2vec2.0 large model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--config-name": "wav2vec2_large_librivox",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
             "task.data": None,
@@ -51,11 +50,11 @@ all_models = {
             "optimization.update_freq='[x]'": None,
         },
         "x/k": 128,
-   },
+    },
     "wav2vec2_conformer_base": {
-        "help_text" : "wav2vec2.0 conformer base model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--config-name":"wav2vec2_conformer_base_librispeech",
+        "help_text": "wav2vec2.0 conformer base model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--config-name": "wav2vec2_conformer_base_librispeech",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
             "task.data": None,
@@ -66,11 +65,11 @@ all_models = {
         },
     },
     "wav2vec2_conformer_large": {
-        "help_text" : "wav2vec2.0 conformer large model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--config-name":"wav2vec2_conformer_large_librivox",
+        "help_text": "wav2vec2.0 conformer large model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--config-name": "wav2vec2_conformer_large_librivox",
         "--config-dir": "examples/wav2vec/config/pretraining",
-         "required-args": {
+        "required-args": {
             "task.data": None,
         },
         "extra_args": {
@@ -79,9 +78,9 @@ all_models = {
         },
     },
     "hubert_base": {
-        "help_text" : "hubert base model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--config-name":"hubert_base_librispeech",
+        "help_text": "hubert base model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--config-name": "hubert_base_librispeech",
         "--config-dir": "examples/hubert/config/pretrain",
         "required-args": {
             "task.data": None,
@@ -92,12 +91,12 @@ all_models = {
             """task.labels='["km"]'""": None,
             "model.label_rate=100": None,
         },
-   },
+    },
     "data2vec_base": {
-        "help_text" : "data2vec base model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--config-name":"base_librispeech",
-        "--confic-dir":"examples/data2vec/config/audio/pretraining",
+        "help_text": "data2vec base model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--config-name": "base_librispeech",
+        "--confic-dir": "examples/data2vec/config/audio/pretraining",
         "required-args": {
             "task.data": None,
             "common.user_dir": None,
@@ -108,29 +107,28 @@ all_models = {
         },
     },
     "data2vec2_base": {
-        "help_text" : "data2vec 2.0 base model from fairseq",
-        "command" : "fairseq-hydra-train",
-        "--confic-dir":"examples/data2vec/config/v2",
-        "--config-name":"base_audio_only_task",
+        "help_text": "data2vec 2.0 base model from fairseq",
+        "command": "fairseq-hydra-train",
+        "--confic-dir": "examples/data2vec/config/v2",
+        "--config-name": "base_audio_only_task",
         "required-args": {
             "task.data": None,
         },
         "extra_args": None,
     },
     "data2vec2_large": {
-        "help_text" : "data2vec 2.0 large model from fairseq",
-        "command" : "fairseq-hydra-train",
+        "help_text": "data2vec 2.0 large model from fairseq",
+        "command": "fairseq-hydra-train",
         "--config-dir": "examples/data2vec/config/v2",
-        "--config-name":"large_audio_only_task",
+        "--config-name": "large_audio_only_task",
         "required-args": {
             "task.data": None,
         },
         "extra_args": None,
-
     },
     "speechT5_base": {
-        "help_text" : "speechT5 base model from fairseq. Not yet implemented",
-        "command":"fairseq-train",
+        "help_text": "speechT5 base model from fairseq. Not yet implemented",
+        "command": "fairseq-train",
         "--config-name": None,
         "--config-dir": None,
         "required_args": {
@@ -149,7 +147,7 @@ all_models = {
             "--seed": 1337,
             "--fp16": None,
             "--task": "speecht5",
-            "--t5-task": "pretrain", 
+            "--t5-task": "pretrain",
             "--label-rates": 50,
             "--sample-rate": 16000,
             "--random-crop": None,
@@ -181,8 +179,8 @@ all_models = {
             "--relative-position-embedding": None,
             "--use-codebook": None,
             "--codebook-prob": 0.1,
-            "--loss-weights=[10,0.1]" : None,
+            "--loss-weights=[10,0.1]": None,
             "--max-text-positions": 600,
-        }
+        },
     },
 }

@@ -175,7 +175,7 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion):
 @click.argument(
     "model", nargs=1, type=click.Choice(all_models.keys(), case_sensitive=False)
 )
-@click.pass_context 
+@click.pass_context
 def pretrain(ctx, model):
     """Pretrain model unsupervised"""
     if not ctx.obj["quiet"]:
@@ -185,6 +185,7 @@ def pretrain(ctx, model):
             for param, param_value in all_models[model].items():
                 click.echo(f"\t{param}: {param_value}")
     run_fairseq_pretrain(model_dict=all_models[model], ctx=ctx.obj)
+
 
 @cli.command()
 @click.option(
