@@ -2,6 +2,27 @@
 Contains the commands found fairseq/examples/...
 """
 
+def run_fairseq_pretrain(model_dict: dict, ctx: dict):
+    """ Run fairseq pre-training. 
+
+    Parameters:
+    -----------
+    model_dict: dict
+        Dictionary of arguments to pass to fairseq pre-training.
+            
+    ctx: dict
+        Dictionary of rifs context arguments.
+
+    Returns:
+    --------
+    None
+    """
+    if ctx['verbose']:
+        print('Running fairseq pre-training...')
+    
+    
+
+
 all_models = {
     "wav2vec2_base": {
         "help_text" : "wav2vec2.0 base model from fairseq",
