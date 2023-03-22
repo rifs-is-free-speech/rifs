@@ -11,6 +11,7 @@ from rifs import __version__
 from rifs.fairseq import all_models, run_fairseq_pretrain
 from rifsdatasets import all_datasets
 from rifsalignment import align_csv, alignment_methods
+from rifsaugmentation import augment_all
 
 
 @click.group(chain=True, invoke_without_command=True)
@@ -160,15 +161,27 @@ def align(ctx, alignment_method, model, dataset):
 @click.option(
     "--with-voice-conversion", is_flag=True, help="Preprocess with voice conversion."
 )
+@click.argument(
+    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
+)
 @click.pass_context
-def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion):
-    """Preprocess the data and save copy to disk ready for training."""
+def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, dataset):
+    """Augment DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
             click.echo(f"\twith_noise_pack: {with_noise_pack}")
             click.echo(f"\twith_room_simulation: {with_room_simulation}")
             click.echo(f"\twith_voice_conversion: {with_voice_conversion}")
+
+    augment_all(
+        source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
+        target_path=join(abspath(ctx.obj["data_path"]), "augmented", dataset),
+        noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack),
+        recursive=True,
+    )
+
+    print(f"Finished augmenting the {dataset} dataset!")
 
 
 @cli.command()
