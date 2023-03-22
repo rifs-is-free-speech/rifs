@@ -54,6 +54,8 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
     user_dir = "?"
     command_path = join(fairseq_path, model_dict["command"])
     command = f"{command_path} -m "
+    if model_dict["pos_arg"]:
+        command += f"{model_dict['pos_arg']} "
     end_command = ""
     if model_dict["--config-dir"]:
         config_dir = join(fairseq_path, model_dict["--config-dir"])
@@ -67,6 +69,8 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
                 command += f"task.label_dir {label_path} "
             elif required_args == "common.user_dir":
                 command += f"common.user_dir {user_dir} "
+            elif required_args == "--dest":
+                end_command += f"--dest {join([ctx['data_path'],'fairseq'])} "
 
             elif required_args[:2] == "--":
                 if model_dict['required_args'][required_args]:
@@ -101,6 +105,20 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
 
 
 all_models = {
+    "manifest_wav2vec2": {
+        "help_text": "Prepare manifest files for wav2vec 2.0 pre-training.",
+        "command": "examples/wav2vec/wav2vec_manifest.py", 
+        "--config-name": None,
+        "--config-dir": None,
+        "required_args": {
+            "--dest": None,
+        },
+        "extra_args": {
+            "--valid-percent": 0.01,
+            "--ext": "wav",
+        },
+        "pos_arg": None,
+    },
     "wav2vec2_base": {
         "help_text": "wav2vec2.0 base model from fairseq",
         "command": "fairseq_cli/hydra_train.py",
