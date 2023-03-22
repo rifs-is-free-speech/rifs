@@ -172,19 +172,32 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion):
 
 
 @cli.command()
+@click.option(
+    "--fairseq-path",
+    type=click.Path(exists=True, resolve_path=True),
+    help="Path to the fairseq directory.",
+)
 @click.argument(
     "model", nargs=1, type=click.Choice(all_models.keys(), case_sensitive=False)
 )
 @click.pass_context
-def pretrain(ctx, model):
+def pretrain(ctx, fairseq_path, model):
     """Pretrain model unsupervised"""
+    if fairseq_path is None:
+        click.echo("Please specify the path to the fairseq directory to pretrain.")
+        click.echo("You can do this with the --fairseq-path option.")
+        exit(1)
+
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Pretrain parameters:")
             click.echo(f"\tmodel: {model}")
+            click.echo(f"\tfairseq_path: {fairseq_path}")
             for param, param_value in all_models[model].items():
                 click.echo(f"\t{param}: {param_value}")
-    run_fairseq_pretrain(model_dict=all_models[model], ctx=ctx.obj)
+    run_fairseq_pretrain(
+        fairseq_path=fairseq_path, model_dict=all_models[model], ctx=ctx.obj
+    )
 
 
 @cli.command()
