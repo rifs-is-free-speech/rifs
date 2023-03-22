@@ -147,3 +147,4 @@ noise/
 # Mac file
 .DS_Store
 .hydra/
+multirun/

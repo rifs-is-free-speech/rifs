@@ -190,11 +190,16 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, d
     type=click.Path(exists=True, resolve_path=True),
     help="Path to the fairseq directory.",
 )
+@click.option(
+    "--manifest-source",
+    type=click.Path(exists=True, resolve_path=True),
+    help="Optional: Path to wav files for manifest creation",
+)
 @click.argument(
     "model", nargs=1, type=click.Choice(all_models.keys(), case_sensitive=False)
 )
 @click.pass_context
-def pretrain(ctx, fairseq_path, model):
+def pretrain(ctx, fairseq_path, model, manifest_source):
     """Pretrain model unsupervised"""
     if fairseq_path is None:
         click.echo("Please specify the path to the fairseq directory to pretrain.")
@@ -209,7 +214,7 @@ def pretrain(ctx, fairseq_path, model):
             for param, param_value in all_models[model].items():
                 click.echo(f"\t{param}: {param_value}")
     run_fairseq_pretrain(
-        fairseq_path=fairseq_path, model_dict=all_models[model], ctx=ctx.obj
+        fairseq_path=fairseq_path, model_dict=all_models[model], ctx=ctx.obj, manifest_source=manifest_source
     )
 
 

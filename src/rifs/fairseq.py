@@ -5,7 +5,7 @@ import subprocess
 
 from os.path import join
 
-def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict):
+def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict, manifest_source: str = None):
     """Run fairseq pre-training.
 
     Parameters:
@@ -26,12 +26,12 @@ def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict):
     if ctx["verbose"]:
         print("Running fairseq pre-training...")
 
-    command = fairseq_constructor(fairseq_path, model_dict, ctx)
+    command = fairseq_constructor(fairseq_path, model_dict, ctx, manifest_source)
     if ctx["verbose"]:
         print("Command: ", command)
     subprocess.Popen(f"python {command}", shell=True).wait()
 
-def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
+def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict, manifest_source=None) -> str:
     """Creates the fairseq pre-training command.
 
     Parameters:
@@ -45,6 +45,9 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
     ctx: dict
         Dictionary of rifs context arguments.
 
+    manifest_source: str
+        Path to source manifest folder.
+
     Returns:
     --------
     str
@@ -53,51 +56,59 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
     label_path = "?"
     user_dir = "?"
     command_path = join(fairseq_path, model_dict["command"])
-    command = f"{command_path} -m "
+    command = f"{command_path} "
     if model_dict["pos_arg"]:
-        command += f"{model_dict['pos_arg']} "
+        if model_dict["pos_arg"] == "DIR": 
+            if manifest_source:
+                command += f"{manifest_source} "
+            else:
+                raise Exception("No source manifest provided. This is required for fairseq manifest creation.")
+        else:
+            command += f"{model_dict['pos_arg']} "
+    else: 
+        command += f"-m "
     end_command = ""
     if model_dict["--config-dir"]:
         config_dir = join(fairseq_path, model_dict["--config-dir"])
         config_name = model_dict["--config-name"]
-        for required_args in model_dict["required-args"]:
-            if required_args == "task.data":
-                command += f"task.data {ctx['data_path']} "
-            elif required_args == "distributed_training.distributed_world_size":
-                command += f"distributed_training.distributed_world_size {k} "
-            elif required_args == "task.label_dir":
-                command += f"task.label_dir {label_path} "
-            elif required_args == "common.user_dir":
-                command += f"common.user_dir {user_dir} "
-            elif required_args == "--dest":
-                end_command += f"--dest {join([ctx['data_path'],'fairseq'])} "
+        end_command += f"--config-dir {config_dir} --config-name {config_name} "
+    for required_args in model_dict["required-args"]:
+        if required_args == "task.data":
+            command += f"task.data={join(ctx['data_path'],'fairseq')} "
+        elif required_args == "distributed_training.distributed_world_size":
+            command += f"distributed_training.distributed_world_size={k} "
+        elif required_args == "task.label_dir":
+            command += f"task.label_dir={label_path} "
+        elif required_args == "common.user_dir":
+            command += f"common.user_dir={user_dir} "
+        elif required_args == "--dest":
+            end_command += f"--dest {join(ctx['data_path'],'fairseq')} "
 
-            elif required_args[:2] == "--":
-                if model_dict['required_args'][required_args]:
-                    end_command += f"{required_args} {model_dict['required-args'][required_args]} "
-                else:
-                    end_command += f"{required_args} "
+        elif required_args[:2] == "--":
+            if model_dict['required_args'][required_args]:
+                end_command += f"{required_args} {model_dict['required-args'][required_args]} "
             else:
-                if model_dict['required-args'][required_args]:
-                    command += f"{required_args} {model_dict['required-args'][required_args]} "
-                else:
-                    command += f"{required_args} "
+                end_command += f"{required_args} "
+        else:
+            if model_dict['required-args'][required_args]:
+                command += f"{required_args}={model_dict['required-args'][required_args]} "
+            else:
+                command += f"{required_args} "
 
-        for extra_args in model_dict["extra_args"]:
-            if extra_args == "optimization.update_freq='[x]'":
-                x = model_dict["x/k"]
-                command += f"optimization.update_freq='[{x//k}]' "
-            elif extra_args[:2] == "--":
-                if model_dict['extra_args'][extra_args]:
-                    end_command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
-                else:
-                    command += f"{extra_args} "
+    for extra_args in model_dict["extra_args"]:
+        if extra_args == "optimization.update_freq='[x]'":
+            x = model_dict["x/k"]
+            command += f"optimization.update_freq='[{x//k}]' "
+        elif extra_args[:2] == "--":
+            if model_dict['extra_args'][extra_args]:
+                end_command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
             else:
-                if model_dict['extra_args'][extra_args]:
-                    command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
-                else:
-                    command += f"{extra_args} "
-        command += f"--config-dir {config_dir} --config-name {config_name} "
+                command += f"{extra_args} "
+        else:
+            if model_dict['extra_args'][extra_args]:
+                command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
+            else:
+                command += f"{extra_args} "
     command += end_command
     return command
 
@@ -110,14 +121,14 @@ all_models = {
         "command": "examples/wav2vec/wav2vec_manifest.py", 
         "--config-name": None,
         "--config-dir": None,
-        "required_args": {
+        "required-args": {
             "--dest": None,
         },
         "extra_args": {
             "--valid-percent": 0.01,
             "--ext": "wav",
         },
-        "pos_arg": None,
+        "pos_arg": "DIR",
     },
     "wav2vec2_base": {
         "help_text": "wav2vec2.0 base model from fairseq",
@@ -132,6 +143,7 @@ all_models = {
             "optimization.update_freq='[x]'": None,
         },
         "x/k": 64,
+        "pos_arg": None,
     },
     "wav2vec2_large": {
         "help_text": "wav2vec2.0 large model from fairseq",
@@ -146,6 +158,7 @@ all_models = {
             "optimization.update_freq='[x]'": None,
         },
         "x/k": 128,
+        "pos_arg": None,
     },
     "wav2vec2_conformer_base": {
         "help_text": "wav2vec2.0 conformer base model from fairseq",
@@ -159,6 +172,7 @@ all_models = {
             "--attn-type": "espnet",
             "--pos-enc-type": "rel_pos",
         },
+        "pos_arg": None,
     },
     "wav2vec2_conformer_large": {
         "help_text": "wav2vec2.0 conformer large model from fairseq",
@@ -172,6 +186,7 @@ all_models = {
             "--attn-type": "espnet",
             "--pos-enc-type": "rel_pos",
         },
+        "pos_arg": None,
     },
     "hubert_base": {
         "help_text": "hubert base model from fairseq",
@@ -187,6 +202,7 @@ all_models = {
             """task.labels='["km"]'""": None,
             "model.label_rate=100": None,
         },
+        "pos_arg": None,
     },
     "data2vec_base": {
         "help_text": "data2vec base model from fairseq",
@@ -202,6 +218,7 @@ all_models = {
             "optimization.update_freq='[x]'": None,
         },
         "x/k": 64,
+        "pos_arg": None,
     },
     "data2vec2_base": {
         "help_text": "data2vec 2.0 base model from fairseq",
@@ -212,6 +229,7 @@ all_models = {
             "task.data": None,
         },
         "extra_args": {},
+        "pos_arg": None,
     },
     "data2vec2_large": {
         "help_text": "data2vec 2.0 large model from fairseq",
@@ -222,6 +240,7 @@ all_models = {
             "task.data": None,
         },
         "extra_args": {},
+        "pos_arg": None,
     },
     "speechT5_base": {
         "help_text": "speechT5 base model from fairseq. Not yet implemented",
@@ -279,5 +298,6 @@ all_models = {
             "--loss-weights=[10,0.1]": None,
             "--max-text-positions": 600,
         },
+        "pos_arg": None,
     },
 }
