@@ -214,7 +214,10 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
             for param, param_value in all_models[model].items():
                 click.echo(f"\t{param}: {param_value}")
     run_fairseq_pretrain(
-        fairseq_path=fairseq_path, model_dict=all_models[model], ctx=ctx.obj, manifest_source=manifest_source
+        fairseq_path=fairseq_path,
+        model_dict=all_models[model],
+        ctx=ctx.obj,
+        manifest_source=manifest_source,
     )
 
 

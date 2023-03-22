@@ -5,7 +5,10 @@ import subprocess
 
 from os.path import join
 
-def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict, manifest_source: str = None):
+
+def run_fairseq_pretrain(
+    fairseq_path: str, model_dict: dict, ctx: dict, manifest_source: str = None
+):
     """Run fairseq pre-training.
 
     Parameters:
@@ -31,7 +34,10 @@ def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict, manifes
         print("Command: ", command)
     subprocess.Popen(f"python {command}", shell=True).wait()
 
-def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict, manifest_source=None) -> str:
+
+def fairseq_constructor(
+    fairseq_path: str, model_dict: dict, ctx: dict, manifest_source=None
+) -> str:
     """Creates the fairseq pre-training command.
 
     Parameters:
@@ -58,15 +64,17 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict, manifest
     command_path = join(fairseq_path, model_dict["command"])
     command = f"{command_path} "
     if model_dict["pos_arg"]:
-        if model_dict["pos_arg"] == "DIR": 
+        if model_dict["pos_arg"] == "DIR":
             if manifest_source:
                 command += f"{manifest_source} "
             else:
-                raise Exception("No source manifest provided. This is required for fairseq manifest creation.")
+                raise Exception(
+                    "No source manifest provided. This is required for fairseq manifest creation."
+                )
         else:
             command += f"{model_dict['pos_arg']} "
-    else: 
-        command += f"-m "
+    else:
+        command += "-m "
     end_command = ""
     if model_dict["--config-dir"]:
         config_dir = join(fairseq_path, model_dict["--config-dir"])
@@ -85,13 +93,17 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict, manifest
             end_command += f"--dest {join(ctx['data_path'],'fairseq')} "
 
         elif required_args[:2] == "--":
-            if model_dict['required_args'][required_args]:
-                end_command += f"{required_args} {model_dict['required-args'][required_args]} "
+            if model_dict["required_args"][required_args]:
+                end_command += (
+                    f"{required_args} {model_dict['required-args'][required_args]} "
+                )
             else:
                 end_command += f"{required_args} "
         else:
-            if model_dict['required-args'][required_args]:
-                command += f"{required_args}={model_dict['required-args'][required_args]} "
+            if model_dict["required-args"][required_args]:
+                command += (
+                    f"{required_args}={model_dict['required-args'][required_args]} "
+                )
             else:
                 command += f"{required_args} "
 
@@ -100,12 +112,12 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict, manifest
             x = model_dict["x/k"]
             command += f"optimization.update_freq='[{x//k}]' "
         elif extra_args[:2] == "--":
-            if model_dict['extra_args'][extra_args]:
+            if model_dict["extra_args"][extra_args]:
                 end_command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
             else:
                 command += f"{extra_args} "
         else:
-            if model_dict['extra_args'][extra_args]:
+            if model_dict["extra_args"][extra_args]:
                 command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
             else:
                 command += f"{extra_args} "
@@ -113,12 +125,10 @@ def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict, manifest
     return command
 
 
-
-
 all_models = {
     "manifest_wav2vec2": {
         "help_text": "Prepare manifest files for wav2vec 2.0 pre-training.",
-        "command": "examples/wav2vec/wav2vec_manifest.py", 
+        "command": "examples/wav2vec/wav2vec_manifest.py",
         "--config-name": None,
         "--config-dir": None,
         "required-args": {
