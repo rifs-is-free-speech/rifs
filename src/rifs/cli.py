@@ -23,25 +23,25 @@ from rifsalignment import align_csv, alignment_methods
 @click.option(
     "--data-path",
     default="data",
-    type=click.Path(),
+    type=click.Path(exists=True, resolve_path=True),
     help="Path to the data directory. Default: data",
 )
 @click.option(
     "--model-path",
     default="models",
-    type=click.Path(),
+    type=click.Path(exists=True, resolve_path=True),
     help="Path to the model directory. Default: models",
 )
 @click.option(
     "--output-path",
     default="output",
-    type=click.Path(),
+    type=click.Path(exists=True, resolve_path=True),
     help="Path to the output directory. Default: output",
 )
 @click.option(
     "--noise-path",
     default="noise",
-    type=click.Path(),
+    type=click.Path(exists=True, resolve_path=True),
     help="Path to the noise directory. Default: noise",
 )
 @click.pass_context
