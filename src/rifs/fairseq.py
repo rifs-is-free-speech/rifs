@@ -1,11 +1,9 @@
 """ Interface for fairseq pre-training.
 Contains the commands found fairseq/examples/...
 """
-# import shlex
 import subprocess
 
 from os.path import join
-
 
 def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict):
     """Run fairseq pre-training.
@@ -27,16 +25,85 @@ def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict):
     """
     if ctx["verbose"]:
         print("Running fairseq pre-training...")
-    print(ctx)
 
-    command = join(fairseq_path, model_dict["command"])
-    subprocess.Popen(command, shell=True).wait()
+    command = fairseq_constructor(fairseq_path, model_dict, ctx)
+    if ctx["verbose"]:
+        print("Command: ", command)
+    subprocess.Popen(f"python {command}", shell=True).wait()
+
+def fairseq_constructor(fairseq_path: str, model_dict: dict, ctx: dict) -> str:
+    """Creates the fairseq pre-training command.
+
+    Parameters:
+    -----------
+    fairseq_path: str
+        Path to fairseq directory.
+
+    model_dict: dict
+        Dictionary of arguments to pass to fairseq pre-training.
+
+    ctx: dict
+        Dictionary of rifs context arguments.
+
+    Returns:
+    --------
+    str
+    """
+    k = 1
+    label_path = "?"
+    user_dir = "?"
+    command_path = join(fairseq_path, model_dict["command"])
+    command = f"{command_path} -m "
+    end_command = ""
+    if model_dict["--config-dir"]:
+        config_dir = join(fairseq_path, model_dict["--config-dir"])
+        config_name = model_dict["--config-name"]
+        for required_args in model_dict["required-args"]:
+            if required_args == "task.data":
+                command += f"task.data {ctx['data_path']} "
+            elif required_args == "distributed_training.distributed_world_size":
+                command += f"distributed_training.distributed_world_size {k} "
+            elif required_args == "task.label_dir":
+                command += f"task.label_dir {label_path} "
+            elif required_args == "common.user_dir":
+                command += f"common.user_dir {user_dir} "
+
+            elif required_args[:2] == "--":
+                if model_dict['required_args'][required_args]:
+                    end_command += f"{required_args} {model_dict['required-args'][required_args]} "
+                else:
+                    end_command += f"{required_args} "
+            else:
+                if model_dict['required-args'][required_args]:
+                    command += f"{required_args} {model_dict['required-args'][required_args]} "
+                else:
+                    command += f"{required_args} "
+
+        for extra_args in model_dict["extra_args"]:
+            if extra_args == "optimization.update_freq='[x]'":
+                x = model_dict["x/k"]
+                command += f"optimization.update_freq='[{x//k}]' "
+            elif extra_args[:2] == "--":
+                if model_dict['extra_args'][extra_args]:
+                    end_command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
+                else:
+                    command += f"{extra_args} "
+            else:
+                if model_dict['extra_args'][extra_args]:
+                    command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
+                else:
+                    command += f"{extra_args} "
+        command += f"--config-dir {config_dir} --config-name {config_name} "
+    command += end_command
+    return command
+
+
 
 
 all_models = {
     "wav2vec2_base": {
         "help_text": "wav2vec2.0 base model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-name": "wav2vec2_base_librispeech",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
@@ -50,7 +117,7 @@ all_models = {
     },
     "wav2vec2_large": {
         "help_text": "wav2vec2.0 large model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-name": "wav2vec2_large_librivox",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
@@ -64,7 +131,7 @@ all_models = {
     },
     "wav2vec2_conformer_base": {
         "help_text": "wav2vec2.0 conformer base model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-name": "wav2vec2_conformer_base_librispeech",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
@@ -77,7 +144,7 @@ all_models = {
     },
     "wav2vec2_conformer_large": {
         "help_text": "wav2vec2.0 conformer large model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-name": "wav2vec2_conformer_large_librivox",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
@@ -90,7 +157,7 @@ all_models = {
     },
     "hubert_base": {
         "help_text": "hubert base model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-name": "hubert_base_librispeech",
         "--config-dir": "examples/hubert/config/pretrain",
         "required-args": {
@@ -105,9 +172,9 @@ all_models = {
     },
     "data2vec_base": {
         "help_text": "data2vec base model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-name": "base_librispeech",
-        "--confic-dir": "examples/data2vec/config/audio/pretraining",
+        "--config-dir": "examples/data2vec/config/audio/pretraining",
         "required-args": {
             "task.data": None,
             "common.user_dir": None,
@@ -116,30 +183,31 @@ all_models = {
         "extra_args": {
             "optimization.update_freq='[x]'": None,
         },
+        "x/k": 64,
     },
     "data2vec2_base": {
         "help_text": "data2vec 2.0 base model from fairseq",
-        "command": "fairseq-hydra-train",
-        "--confic-dir": "examples/data2vec/config/v2",
+        "command": "fairseq_cli/hydra_train.py",
+        "--config-dir": "examples/data2vec/config/v2",
         "--config-name": "base_audio_only_task",
         "required-args": {
             "task.data": None,
         },
-        "extra_args": None,
+        "extra_args": {},
     },
     "data2vec2_large": {
         "help_text": "data2vec 2.0 large model from fairseq",
-        "command": "fairseq-hydra-train",
+        "command": "fairseq_cli/hydra_train.py",
         "--config-dir": "examples/data2vec/config/v2",
         "--config-name": "large_audio_only_task",
         "required-args": {
             "task.data": None,
         },
-        "extra_args": None,
+        "extra_args": {},
     },
     "speechT5_base": {
         "help_text": "speechT5 base model from fairseq. Not yet implemented",
-        "command": "fairseq-train",
+        "command": "fairseq_cli/train.py",
         "--config-name": None,
         "--config-dir": None,
         "required_args": {
