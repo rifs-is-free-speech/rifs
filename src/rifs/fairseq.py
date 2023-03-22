@@ -3,6 +3,7 @@ Contains the commands found fairseq/examples/...
 """
 import subprocess
 
+import os
 from os.path import join
 
 
@@ -32,7 +33,15 @@ def run_fairseq_pretrain(
     command = fairseq_constructor(fairseq_path, model_dict, ctx, manifest_source)
     if ctx["verbose"]:
         print("Command: ", command)
+    wd = os.getcwd()
+    if ctx["verbose"]:
+        print("Changing directory to fairseq path.")
+    os.chdir(fairseq_path)
     subprocess.Popen(f"python {command}", shell=True).wait()
+    if ctx["verbose"]:
+        print("Fairseq pre-training ended")
+        print("Changing directory back to original working directory.")
+    os.chdir(wd)
 
 
 def fairseq_constructor(
@@ -60,7 +69,6 @@ def fairseq_constructor(
     """
     k = 1
     label_path = "?"
-    user_dir = "?"
     command_path = join(fairseq_path, model_dict["command"])
     command = f"{command_path} "
     if model_dict["pos_arg"]:
@@ -87,8 +95,6 @@ def fairseq_constructor(
             command += f"distributed_training.distributed_world_size={k} "
         elif required_args == "task.label_dir":
             command += f"task.label_dir={label_path} "
-        elif required_args == "common.user_dir":
-            command += f"common.user_dir={user_dir} "
         elif required_args == "--dest":
             end_command += f"--dest {join(ctx['data_path'],'fairseq')} "
 
@@ -111,6 +117,9 @@ def fairseq_constructor(
         if extra_args == "optimization.update_freq='[x]'":
             x = model_dict["x/k"]
             command += f"optimization.update_freq='[{x//k}]' "
+        elif extra_args == "common.user_dir":
+            user_dir = join(fairseq_path, model_dict["extra_args"]["common.user_dir"])
+            command += f"common.user_dir={user_dir} "
         elif extra_args[:2] == "--":
             if model_dict["extra_args"][extra_args]:
                 end_command += f"{extra_args} {model_dict['extra_args'][extra_args]} "
@@ -221,11 +230,11 @@ all_models = {
         "--config-dir": "examples/data2vec/config/audio/pretraining",
         "required-args": {
             "task.data": None,
-            "common.user_dir": None,
             "distributed_training.distributed_world_size": None,
         },
         "extra_args": {
             "optimization.update_freq='[x]'": None,
+            "common.user_dir": "examples/data2vec",
         },
         "x/k": 64,
         "pos_arg": None,
