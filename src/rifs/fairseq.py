@@ -1,13 +1,20 @@
 """ Interface for fairseq pre-training.
 Contains the commands found fairseq/examples/...
 """
+# import shlex
+import subprocess
+
+from os.path import join
 
 
-def run_fairseq_pretrain(model_dict: dict, ctx: dict):
+def run_fairseq_pretrain(fairseq_path: str, model_dict: dict, ctx: dict):
     """Run fairseq pre-training.
 
     Parameters:
     -----------
+    fairseq_path: str
+        Path to fairseq directory.
+
     model_dict: dict
         Dictionary of arguments to pass to fairseq pre-training.
 
@@ -20,6 +27,10 @@ def run_fairseq_pretrain(model_dict: dict, ctx: dict):
     """
     if ctx["verbose"]:
         print("Running fairseq pre-training...")
+    print(ctx)
+
+    command = join(fairseq_path, model_dict["command"])
+    subprocess.Popen(command, shell=True).wait()
 
 
 all_models = {
