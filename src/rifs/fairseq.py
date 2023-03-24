@@ -23,6 +23,10 @@ def run_fairseq_pretrain(
     ctx: dict
         Dictionary of rifs context arguments.
 
+    manifest_source: str
+        Path to source manifest folder.
+
+
     Returns:
     --------
     None
