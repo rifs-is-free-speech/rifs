@@ -188,7 +188,10 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, d
 
 @cli.command()
 @click.option(
-    "--iteration", default="1st", type=click.Choice(["1st", "2nd"]), help="Features for either first or second iteration  of HUBERT training."
+    "--iteration",
+    default="1st",
+    type=click.Choice(["1st", "2nd"]),
+    help="Features for either first or second iteration  of HUBERT training.",
 )
 @click.argument(
     "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)

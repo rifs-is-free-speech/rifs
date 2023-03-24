@@ -48,7 +48,7 @@ def create_tsv(
         out_dir.mkdir()
 
     valid_f = open(out_dir / f"{dataset}_valid.tsv", "w") if valid_percent > 0 else None
-    #search_pattern = ".*train.*"
+    # search_pattern = ".*train.*"
     with open(out_dir / f"{dataset}_train.tsv", "w") as train_f:
         print(root_dir, file=train_f)
 
@@ -56,7 +56,7 @@ def create_tsv(
             print(root_dir, file=valid_f)
 
         for fname in root_dir.glob(f"**/*.{extension}"):
-            #if re.match(search_pattern, str(fname)):
+            # if re.match(search_pattern, str(fname)):
             frames = torchaudio.info(fname).num_frames
             dest = train_f if torch.rand(1) > valid_percent else valid_f
             print(f"{fname.relative_to(root_dir)}\t{frames}", file=dest)
@@ -65,7 +65,9 @@ def create_tsv(
     _LG.info("Finished creating the file lists successfully")
 
 
-def _get_feat_lens_paths(feat_dir: Path, split: str, rank: int, num_rank: int) -> Tuple[Path, Path]:
+def _get_feat_lens_paths(
+    feat_dir: Path, split: str, rank: int, num_rank: int
+) -> Tuple[Path, Path]:
     r"""Get the feature and lengths paths based on feature directory,
         data split, rank, and number of ranks.
     Args:

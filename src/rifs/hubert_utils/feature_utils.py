@@ -31,10 +31,15 @@ def get_shard_range(num_lines: int, num_rank: int, rank: int) -> Tuple[int, int]
         int: The end index for the current rank.
     """
     assert 1 <= rank <= num_rank, f"invalid rank/num_rank {rank}/{num_rank}"
-    assert num_lines > 0, f"Found {num_lines} files, make sure you specify the correct root directory"
+    assert (
+        num_lines > 0
+    ), f"Found {num_lines} files, make sure you specify the correct root directory"
     start = round(num_lines / num_rank * (rank - 1))
     end = round(num_lines / num_rank * rank)
-    _LG.info(f"rank {rank} of {num_rank}, process {end-start} " f"({start}-{end}) out of {num_lines}")
+    _LG.info(
+        f"rank {rank} of {num_rank}, process {end-start} "
+        f"({start}-{end}) out of {num_lines}"
+    )
     return start, end
 
 
@@ -56,7 +61,9 @@ def extract_feature_mfcc(
     waveform, sr = torchaudio.load(path)
     assert sr == sample_rate
     feature_extractor = torchaudio.transforms.MFCC(
-        sample_rate=sample_rate, n_mfcc=13, melkwargs={"n_fft": 400, "hop_length": 160, "center": False}
+        sample_rate=sample_rate,
+        n_mfcc=13,
+        melkwargs={"n_fft": 400, "hop_length": 160, "center": False},
     ).to(device)
     waveform = waveform[0].to(device)
     mfccs = feature_extractor(waveform)  # (freq, time)
@@ -92,7 +99,9 @@ def extract_feature_hubert(
     assert sr == sample_rate
     waveform = waveform.to(device)
     with torch.inference_mode():
-        feat = model.wav2vec2.extract_features(waveform, num_layers=layer_index)[0][-1][0]  # (time, feat_dim)
+        feat = model.wav2vec2.extract_features(waveform, num_layers=layer_index)[0][-1][
+            0
+        ]  # (time, feat_dim)
     return feat
 
 
@@ -107,7 +116,9 @@ def _load_state(model: Module, checkpoint_path: Path, device=_DEFAULT_DEVICE) ->
         (Module): The pretrained model.
     """
     state_dict = torch.load(checkpoint_path, map_location=device)
-    state_dict = {k.replace("model.", ""): v for k, v in state_dict["state_dict"].items()}
+    state_dict = {
+        k.replace("model.", ""): v for k, v in state_dict["state_dict"].items()
+    }
     model.load_state_dict(state_dict)
     return model
 
@@ -148,7 +159,9 @@ def dump_features(
         None
     """
     if feature_type not in ["mfcc", "hubert"]:
-        raise ValueError(f"Expected feature type to be 'mfcc' or 'hubert'. Found {feature_type}.")
+        raise ValueError(
+            f"Expected feature type to be 'mfcc' or 'hubert'. Found {feature_type}."
+        )
     if feature_type == "hubert" and layer_index is None:
         assert ValueError("Please set the layer_index for HuBERT feature.")
     features = []
@@ -176,7 +189,9 @@ def dump_features(
             if feature_type == "mfcc":
                 feature = extract_feature_mfcc(path, device, sample_rate)
             else:
-                feature = extract_feature_hubert(path, device, sample_rate, model, layer_index)
+                feature = extract_feature_hubert(
+                    path, device, sample_rate, model, layer_index
+                )
             features.append(feature.cpu())
             lens.append(feature.shape[0])
     features = torch.cat(features)
