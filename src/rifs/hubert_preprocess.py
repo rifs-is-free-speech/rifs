@@ -21,11 +21,14 @@ checkpoints_librispeech_hubert_pretrain_base/xxx.ckpt --num-cluster 500
 --percent 0.1
 """
 import logging
+import os
 from argparse import ArgumentParser, RawTextHelpFormatter
 from pathlib import Path
 
 import torch
-from utils import create_tsv, dump_features, get_km_label, learn_kmeans
+from rifs.hubert_utils.common_utils import create_tsv
+from rifs.hubert_utils.feature_utils import dump_features
+from rifs.hubert_utils.kmeans import get_km_label, learn_kmeans
 
 
 def _init_logger(debug=False):
@@ -48,9 +51,9 @@ def _parse_args():
     parser.add_argument("--debug", action="store_true", help="Enable debug log")
     parser.add_argument(
         "--dataset",
-        default="librispeech",
+        default="hubert",
         type=str,
-        choices=["librispeech", "librilight"],
+        choices=["librispeech", "librilight", "hubert"],
     )
     parser.add_argument(
         "--root-dir",
@@ -100,7 +103,7 @@ def main(args):
     _init_logger(args.debug)
 
     if not args.exp_dir.exists():
-        args.exp_dir.mkdir()
+        os.makedirs(args.exp_dir, exist_ok=True)
     if args.feat_type == "mfcc":
         data_dir = args.exp_dir / "data" / "mfcc"
     else:

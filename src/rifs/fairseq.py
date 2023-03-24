@@ -100,7 +100,7 @@ def fairseq_constructor(
         elif required_args == "task.label_dir":
             command += f"task.label_dir={label_path} "
         elif required_args == "--dest":
-            end_command += f"--dest {join(ctx['data_path'],'fairseq')} "
+            end_command += f"--dest {join(ctx['data_path'],'fairseq','manifest')} "
 
         elif required_args[:2] == "--":
             if model_dict["required_args"][required_args]:

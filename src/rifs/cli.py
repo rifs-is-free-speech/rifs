@@ -8,6 +8,8 @@ from os.path import join, abspath
 from rifs.utils import is_package_installed
 from rifs import __version__
 
+from rifs.hubert import hubert_preprocess_1st, hubert_preprocess_2nd
+
 from rifs.fairseq import all_models, run_fairseq_pretrain
 from rifsdatasets import all_datasets
 from rifsalignment import align_csv, alignment_methods
@@ -182,6 +184,29 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, d
     )
 
     print(f"Finished augmenting the {dataset} dataset!")
+
+
+@cli.command()
+@click.option(
+    "--iteration", default="1st", type=click.Choice(["1st", "2nd"]), help="Features for either first or second iteration  of HUBERT training."
+)
+@click.argument(
+    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
+)
+@click.pass_context
+def hubert_preprocess(ctx, iteration, dataset):
+    """Preprocess DATASET for hubert training"""
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Preprocess parameters:")
+            click.echo(f"\titeration: {iteration}")
+            click.echo(f"\tdataset: {dataset}")
+
+    if iteration == "1st":
+        hubert_preprocess_1st(ctx=ctx.obj, dataset=dataset)
+
+    elif iteration == "2nd":
+        hubert_preprocess_2nd(ctx=ctx.obj, dataset=dataset)
 
 
 @cli.command()
