@@ -179,6 +179,7 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, d
     augment_all(
         source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
         target_path=join(abspath(ctx.obj["data_path"]), "augmented", dataset),
+        with_room_simulation=with_room_simulation,
         noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack),
         recursive=True,
     )
