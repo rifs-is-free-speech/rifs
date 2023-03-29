@@ -2,6 +2,8 @@ FROM python:3.10.10-bullseye as build
 
 # Add SSH keys
 RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+RUN --mount=type=ssh \
+     ssh -q -T git@github.com 2>&1 | tee /hello
 
 #WORKDIR /app
 
@@ -17,8 +19,9 @@ COPY setup.cfg setup.cfg
 COPY pyproject.toml pyproject.toml
 
 # Install rifs
+# TODO: Get the target as a build arg
 RUN --mount=type=ssh --mount=type=cache,target=~/Library/Caches/pip \
-     pip install --target=/pip-packages .
+     pip install .
 
 # Clean up SSH keys
 RUN rm -rf /root/.ssh/
@@ -26,7 +29,7 @@ RUN rm -rf /root/.ssh/
 # PUBLISH IMAGE
 FROM python:3.10.10-slim-bullseye as publish
 
-# Install git and ffmpeg
+# Install git and ffmpeg in final version
 RUN apt-get update && \
     apt-get install -y git && \
     apt-get install -y ffmpeg
@@ -41,6 +44,5 @@ COPY --from=build /usr/local/bin /usr/local/bin
 # Make sure scripts in .local are usable:
 ENV PATH=/root/.local/bin:$PATH
 
-# Entrypoint can be overridden with other arguments
 ENTRYPOINT ["rifs"]
 
