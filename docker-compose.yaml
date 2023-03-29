@@ -9,4 +9,4 @@ services:
       - ./models:/models
       - ./output:/output
       - ./noise:/noise
-    entrypoint: ["rifs", "-help"]
+    entrypoint: ["rifs", "align"]
