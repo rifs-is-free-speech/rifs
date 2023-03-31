@@ -41,7 +41,7 @@ def run_fairseq_pretrain(
     if ctx["verbose"]:
         print("Changing directory to fairseq path.")
     os.chdir(fairseq_path)
-    subprocess.Popen(f"python {command}", shell=True).wait()
+    subprocess.Popen(f"source /home/data_shares/rifs/rifs/venv/bin/activate; python {command}", shell=True).wait()
     if ctx["verbose"]:
         print("Fairseq pre-training ended")
         print("Changing directory back to original working directory.")
