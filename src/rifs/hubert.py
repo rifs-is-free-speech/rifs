@@ -15,7 +15,7 @@ def hubert_preprocess_1st(ctx, dataset: str):
     if ctx["verbose"]:
         print("HUBERT preprocessing started...")
     result = subprocess.Popen(
-        f"python {folder}/hubert_preprocess.py --root-dir {ctx['data_path']}/raw/{dataset}/audio_segmented --feat-type mfcc --exp-dir {ctx['data_path']}/fairseq/hubert --num-cluster 100",
+        f"python {folder}/hubert_preprocess.py --root-dir {ctx['data_path']}/raw/{dataset}/alignments --feat-type mfcc --exp-dir {ctx['data_path']}/fairseq/hubert --num-cluster 100",
         shell=True,
     ).wait()
 

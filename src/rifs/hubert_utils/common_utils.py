@@ -7,7 +7,6 @@
 Data pre-processing: create tsv files for training (and valiation).
 """
 import logging
-import re
 from pathlib import Path
 from typing import Dict, Tuple, Union
 
