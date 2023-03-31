@@ -71,8 +71,11 @@ def fairseq_constructor(
     --------
     str
     """
-    k = 1
-    label_path = "?"
+    k = 1 # Number of GPUs
+
+    # TODO: What about iteration 2?
+    label_path = join(ctx['data_path'],'fairseq','hubert','data','mfcc','label')
+
     command_path = join(fairseq_path, model_dict["command"])
     command = f"{command_path} "
     if model_dict["pos_arg"]:
@@ -94,13 +97,18 @@ def fairseq_constructor(
         end_command += f"--config-dir {config_dir} --config-name {config_name} "
     for required_args in model_dict["required-args"]:
         if required_args == "task.data":
-            command += f"task.data={join(ctx['data_path'],'fairseq')} "
+            if model_dict[required_args] == "WAV2VEC2":
+                command += f"task.data={join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
+            elif model_dict[required_args] == "HUBERT":
+                command += f"task.data={join(ctx['data_path'],'fairseq','hubert','data','mfcc','tsv')} "
+            else:
+                command += f"task.data={join(ctx['data_path'],'fairseq')} "
         elif required_args == "distributed_training.distributed_world_size":
             command += f"distributed_training.distributed_world_size={k} "
         elif required_args == "task.label_dir":
             command += f"task.label_dir={label_path} "
         elif required_args == "--dest":
-            end_command += f"--dest {join(ctx['data_path'],'fairseq','manifest')} "
+            end_command += f"--dest {join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
 
         elif required_args[:2] == "--":
             if model_dict["required_args"][required_args]:
@@ -159,7 +167,7 @@ all_models = {
         "--config-name": "wav2vec2_base_librispeech",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
-            "task.data": None,
+            "task.data": "WAV2VEC2",
             "distributed_training.distributed_world_size": None,
         },
         "extra_args": {
@@ -174,7 +182,7 @@ all_models = {
         "--config-name": "wav2vec2_large_librivox",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
-            "task.data": None,
+            "task.data": "WAV2VEC2",
             "distributed_training.distributed_world_size": None,
         },
         "extra_args": {
@@ -189,7 +197,7 @@ all_models = {
         "--config-name": "wav2vec2_conformer_base_librispeech",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
-            "task.data": None,
+            "task.data": "WAV2VEC2",
         },
         "extra_args": {
             "--attn-type": "espnet",
@@ -203,7 +211,7 @@ all_models = {
         "--config-name": "wav2vec2_conformer_large_librivox",
         "--config-dir": "examples/wav2vec/config/pretraining",
         "required-args": {
-            "task.data": None,
+            "task.data": "WAV2VEC2",
         },
         "extra_args": {
             "--attn-type": "espnet",
@@ -217,7 +225,7 @@ all_models = {
         "--config-name": "hubert_base_librispeech",
         "--config-dir": "examples/hubert/config/pretrain",
         "required-args": {
-            "task.data": None,
+            "task.data": "HUBERT",
             "task.label_dir": None,
             "distributed_training.distributed_world_size": None,
         },
