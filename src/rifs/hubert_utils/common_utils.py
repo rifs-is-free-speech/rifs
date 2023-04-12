@@ -20,7 +20,6 @@ _LG = logging.getLogger(__name__)
 def create_tsv(
     root_dir: Union[str, Path],
     out_dir: Union[str, Path],
-    dataset: str = "hubert",
     valid_percent: float = 0.01,
     seed: int = 0,
     extension: str = "wav",
@@ -29,7 +28,6 @@ def create_tsv(
     Args:
         root_dir (str or Path): The directory of the dataset.
         out_dir (str or Path): The directory to store the file lists.
-        dataset (str, optional): The dataset to use.
         valid_percent (float, optional): The percentage of data for validation. (Default: 0.01)
         seed (int): The seed for randomly selecting the validation files.
         extension (str, optional): The extension of audio files. (Default: ``flac``)
@@ -46,9 +44,9 @@ def create_tsv(
     if not out_dir.exists():
         out_dir.mkdir()
 
-    valid_f = open(out_dir / f"{dataset}_valid.tsv", "w") if valid_percent > 0 else None
+    valid_f = open(out_dir / f"valid.tsv", "w") if valid_percent > 0 else None
     # search_pattern = ".*train.*"
-    with open(out_dir / f"{dataset}_train.tsv", "w") as train_f:
+    with open(out_dir / f"train.tsv", "w") as train_f:
         print(root_dir, file=train_f)
 
         if valid_f is not None:

@@ -4,7 +4,10 @@ Contains the commands found fairseq/examples/...
 import subprocess
 
 import os
+import yaml
+import collections
 from os.path import join
+from copy import copy
 
 
 def run_fairseq_pretrain(
@@ -31,6 +34,14 @@ def run_fairseq_pretrain(
     --------
     None
     """
+
+    if ctx["verbose"]:
+        print("Checking fairseq config...")
+
+    if not check_fairseq_config(fairseq_path, model_dict):
+        #return
+        pass
+
     if ctx["verbose"]:
         print("Running fairseq pre-training...")
 
@@ -41,7 +52,8 @@ def run_fairseq_pretrain(
     if ctx["verbose"]:
         print("Changing directory to fairseq path.")
     os.chdir(fairseq_path)
-    subprocess.Popen(f"source /home/data_shares/rifs/rifs/venv/bin/activate; python {command}", shell=True).wait()
+    #subprocess.Popen(f"which python", shell=True).wait()
+    subprocess.Popen(f"python {command}", shell=True).wait()
     if ctx["verbose"]:
         print("Fairseq pre-training ended")
         print("Changing directory back to original working directory.")
@@ -97,9 +109,9 @@ def fairseq_constructor(
         end_command += f"--config-dir {config_dir} --config-name {config_name} "
     for required_args in model_dict["required-args"]:
         if required_args == "task.data":
-            if model_dict[required_args] == "WAV2VEC2":
+            if model_dict["required-args"][required_args] == "WAV2VEC2":
                 command += f"task.data={join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
-            elif model_dict[required_args] == "HUBERT":
+            elif model_dict["required-args"][required_args] == "HUBERT":
                 command += f"task.data={join(ctx['data_path'],'fairseq','hubert','data','mfcc','tsv')} "
             else:
                 command += f"task.data={join(ctx['data_path'],'fairseq')} "
@@ -145,6 +157,64 @@ def fairseq_constructor(
     command += end_command
     return command
 
+def check_fairseq_config(fairseq_path: str, model_dict: dict):
+    """
+    Checks for the existence of the fairseq config directory.
+    """
+
+    if not model_dict["--config-dir"]:
+        return True
+
+
+    config_file = join(fairseq_path, model_dict["--config-dir"], f"{model_dict['--config-name']}.yaml")
+
+    success = True
+    try:
+        with open(config_file, 'r') as stream:
+            d = yaml.safe_load(stream)
+
+            for k, v in flatten(d).items():
+                if v == "???":
+                    if k in model_dict["required-args"].keys() or k in model_dict["extra_args"].keys():
+                        continue
+                    print(f"Please set {k} in the config file at {config_file}.")
+                    success = False
+
+    except FileNotFoundError as e:
+        print(e)
+        return False
+    except yaml.YAMLError as e:
+        print(e)
+        return False
+
+    return success
+
+def flatten(d, parent_key='', sep='.'):
+    """
+    Flattens a dictionary.
+
+    Parameters:
+    -----------
+    d: dict
+        Dictionary to flatten.
+    parent_key: str
+        Parent key.
+    sep: str
+        Separator.
+
+    Returns:
+    --------
+    dict
+
+    """
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 all_models = {
     "manifest_wav2vec2": {
@@ -230,7 +300,7 @@ all_models = {
             "distributed_training.distributed_world_size": None,
         },
         "extra_args": {
-            """task.labels='["km"]'""": None,
+            """task.labels='["pt"]'""": None,
             "model.label_rate=100": None,
         },
         "pos_arg": None,

@@ -130,7 +130,7 @@ def main(args):
     for split in ["train", "valid"]:
         for rank in range(1, args.num_rank + 1):
             dump_features(
-                tsv_dir / f"{args.dataset}_{split}.tsv",
+                tsv_dir / f"{split}.tsv",
                 feat_dir,
                 split,
                 rank,
@@ -162,6 +162,15 @@ def main(args):
             args.num_rank,
             device,
         )
+
+        with open(os.path.join(label_dir, f"{split}.pt"), 'w+') as f:
+            for rank in range(1, args.num_rank + 1):
+                f.write(f"{label_dir}/{split}_{rank}_{args.num_rank}.pt\n")
+
+    # Create a dummy dict
+    with open(os.path.join(label_dir, "dict.pt.txt"), "w+") as f:
+        for x in range(args.num_cluster):
+            f.write(f"{x} 1\n")
 
 
 if __name__ == "__main__":
