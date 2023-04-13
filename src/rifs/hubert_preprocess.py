@@ -127,14 +127,19 @@ def main(args):
     if not feat_dir.exists():
         feat_dir.mkdir()
 
+    num_labels = {
+        "train": sum(1 for _ in open(tsv_dir / "train.tsv")) -1 ,
+        "valid": sum(1 for _ in open(tsv_dir / "valid.tsv")) - 1
+    }
+
     for split in ["train", "valid"]:
-        for rank in range(1, args.num_rank + 1):
+        for rank in range(1, num_labels[split] + 1):
             dump_features(
                 tsv_dir / f"{split}.tsv",
                 feat_dir,
                 split,
                 rank,
-                args.num_rank,
+                num_labels[split],
                 device,
                 args.feat_type,
                 args.layer_index,
@@ -146,7 +151,7 @@ def main(args):
     learn_kmeans(
         feat_dir,
         "train",
-        args.num_rank,
+        num_labels["train"],
         km_dir,
         args.num_cluster,
         args.percent,
@@ -159,13 +164,13 @@ def main(args):
             km_dir,
             label_dir,
             split,
-            args.num_rank,
+            num_labels[split],
             device,
         )
 
         with open(os.path.join(label_dir, f"{split}.pt"), 'w+') as f:
-            for rank in range(1, args.num_rank + 1):
-                f.write(f"{label_dir}/{split}_{rank}_{args.num_rank}.pt\n")
+            for rank in range(1, num_labels[split] + 1):
+                f.write(f"{feat_dir}/{split}_{rank}_{num_labels[split]}.pt\n")
 
     # Create a dummy dict
     with open(os.path.join(label_dir, "dict.pt.txt"), "w+") as f:
