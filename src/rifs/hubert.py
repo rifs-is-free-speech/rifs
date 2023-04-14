@@ -65,6 +65,8 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
     None
     """
 
+    hubert_example_path = f"{fairseq_path}/examples/hubert/simple_kmeans"
+
     tsv_dir = f"{ctx['data_path']}/fairseq/hubert/data/mfcc/tsv"
     feat_dir = f"{ctx['data_path']}/fairseq/hubert/data/mfcc/feat"
     km_path = f"{ctx['data_path']}/fairseq/hubert/data/mfcc/km_model"
@@ -79,7 +81,10 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
     n_cluster = 100
 
     create_tsv(
-        f"{ctx['data_path']}/raw/{dataset}/alignments", tsv_dir, seed=ctx["seed"]
+        f"{ctx['data_path']}/raw/{dataset}/alignments",
+        tsv_dir,
+        valid_percent=0.1,
+        seed=ctx["seed"],
     )
 
     for split in ["train", "valid"]:
@@ -87,7 +92,7 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
 
             # Extract MFCC features
             result = subprocess.Popen(
-                f"python {fairseq_path}/examples/hubert/simple_kmeans/dump_mfcc_feature.py {tsv_dir} {split} {n_shard} {rank} {feat_dir}",
+                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard} {rank} {feat_dir}",
                 shell=True,
             ).wait()
 
@@ -95,16 +100,10 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
                 print(f"HUBERT preprocessing failed with exit code {result}!")
                 exit(result)
 
-            """# Extract Hubert features
-            result = subprocess.Popen(
-                f"python {fairseq_path}/examples/hubert/simple_kmeans/dump_hubert_feature.py {tsv_dir} {split} {ckpt_path} {layer} {n_shard} {rank} {feat_dir}",
-                shell=True,
-            ).wait()"""
-
         # Learn K-means
         km_model_path = f"{km_path}/{split}.pt"
         result = subprocess.Popen(
-            f"python {fairseq_path}/examples/hubert/simple_kmeans/learn_kmeans.py {feat_dir} {split} {n_shard} {km_model_path} {n_cluster} --percent 0.1",
+            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard} {km_model_path} {n_cluster} --percent 0.1",
             shell=True,
         ).wait()
 
@@ -115,7 +114,7 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         # K-means applications
         for rank in range(n_shard):
             result = subprocess.Popen(
-                f"python {fairseq_path}/examples/hubert/simple_kmeans/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard} {rank} {lab_dir}",
+                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard} {rank} {lab_dir}",
                 shell=True,
             ).wait()
 
@@ -123,6 +122,7 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
                 print(f"HUBERT preprocessing failed with exit code {result}!")
                 exit(result)
 
+        # Merge shards
         with open(os.path.join(lab_dir, f"{split}.pt"), "w+") as f:
             for rank in range(n_shard):
                 f.write(f"{feat_dir}/{split}_{rank}_{n_shard}.pt\n")
