@@ -34,3 +34,6 @@ def hubert_preprocess_2nd(ctx, dataset: str):
     checkpoints_librispeech_hubert_pretrain_base/xxx.ckpt --num-cluster 500
     --percent 0.1
     """
+
+def fairseq_hubert_preprocess(ctx, dataset: str):
+    pass

@@ -127,49 +127,53 @@ def main(args):
     if not feat_dir.exists():
         feat_dir.mkdir()
 
-    num_labels = {
-        "train": sum(1 for _ in open(tsv_dir / "train.tsv")) -1 ,
+    """num_labels = {
+        "train": sum(1 for _ in open(tsv_dir / "train.tsv")) -1,
         "valid": sum(1 for _ in open(tsv_dir / "valid.tsv")) - 1
+    }"""
+
+    num_labels = {
+        "train": 5,
+        "valid": 5
     }
 
     for split in ["train", "valid"]:
         for rank in range(1, num_labels[split] + 1):
             dump_features(
-                tsv_dir / f"{split}.tsv",
-                feat_dir,
-                split,
-                rank,
-                num_labels[split],
-                device,
-                args.feat_type,
-                args.layer_index,
-                args.checkpoint_path,
-                16_000,
+                tsv_file=os.path.join(tsv_dir, f"{split}.tsv"),
+                out_dir=feat_dir,
+                split=split,
+                rank=rank,
+                num_rank=num_labels[split],
+                device=device,
+                feature_type=args.feat_type,
+                layer_index=args.layer_index,
+                checkpoint_path=args.checkpoint_path,
+                sample_rate=16_000,
             )
 
-    # Fit KMeans clustering model
-    learn_kmeans(
-        feat_dir,
-        "train",
-        num_labels["train"],
-        km_dir,
-        args.num_cluster,
-        args.percent,
-    )
+        # Fit KMeans clustering model
+        learn_kmeans(
+            feat_dir=feat_dir,
+            split=split,
+            num_rank=num_labels[split],
+            km_dir=km_dir,
+            n_clusters=args.num_cluster,
+            percent=args.percent, # TODO: Set to 0.1 to not load entire dataset into memory
+        )
 
-    # Predict labels for MFCC or HuBERT features
-    for split in ["train", "valid"]:
+        # Predict labels for MFCC or HuBERT features
         get_km_label(
-            feat_dir,
-            km_dir,
-            label_dir,
-            split,
-            num_labels[split],
-            device,
+            feat_dir=feat_dir,
+            km_dir=km_dir,
+            label_dir=label_dir,
+            split=split,
+            num_rank=num_labels[split],
+            device=device,
         )
 
         with open(os.path.join(label_dir, f"{split}.pt"), 'w+') as f:
-            for rank in range(1, num_labels[split] + 1):
+            for rank in range(num_labels[split]):
                 f.write(f"{feat_dir}/{split}_{rank}_{num_labels[split]}.pt\n")
 
     # Create a dummy dict
