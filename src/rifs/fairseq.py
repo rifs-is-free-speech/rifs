@@ -7,7 +7,6 @@ import os
 import yaml
 import collections
 from os.path import join
-from copy import copy
 
 
 def run_fairseq_pretrain(
@@ -39,7 +38,7 @@ def run_fairseq_pretrain(
         print("Checking fairseq config...")
 
     if not check_fairseq_config(fairseq_path, model_dict):
-        #return
+        # return
         pass
 
     if ctx["verbose"]:
@@ -52,7 +51,7 @@ def run_fairseq_pretrain(
     if ctx["verbose"]:
         print("Changing directory to fairseq path.")
     os.chdir(fairseq_path)
-    #subprocess.Popen(f"which python", shell=True).wait()
+    # subprocess.Popen(f"which python", shell=True).wait()
     subprocess.Popen(f"python {command}", shell=True).wait()
     if ctx["verbose"]:
         print("Fairseq pre-training ended")
@@ -83,10 +82,10 @@ def fairseq_constructor(
     --------
     str
     """
-    k = 1 # Number of GPUs
+    k = 1  # Number of GPUs
 
     # TODO: What about iteration 2?
-    label_path = join(ctx['data_path'],'fairseq','hubert','data','mfcc','label')
+    label_path = join(ctx["data_path"], "fairseq", "hubert", "data", "mfcc", "label")
 
     command_path = join(fairseq_path, model_dict["command"])
     command = f"{command_path} "
@@ -110,7 +109,9 @@ def fairseq_constructor(
     for required_args in model_dict["required-args"]:
         if required_args == "task.data":
             if model_dict["required-args"][required_args] == "WAV2VEC2":
-                command += f"task.data={join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
+                command += (
+                    f"task.data={join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
+                )
             elif model_dict["required-args"][required_args] == "HUBERT":
                 command += f"task.data={join(ctx['data_path'],'fairseq','hubert','data','mfcc','tsv')} "
             else:
@@ -120,7 +121,9 @@ def fairseq_constructor(
         elif required_args == "task.label_dir":
             command += f"task.label_dir={label_path} "
         elif required_args == "--dest":
-            end_command += f"--dest {join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
+            end_command += (
+                f"--dest {join(ctx['data_path'],'fairseq','wav2vec_manifest')} "
+            )
 
         elif required_args[:2] == "--":
             if model_dict["required_args"][required_args]:
@@ -157,6 +160,7 @@ def fairseq_constructor(
     command += end_command
     return command
 
+
 def check_fairseq_config(fairseq_path: str, model_dict: dict):
     """
     Checks for the existence of the fairseq config directory.
@@ -165,17 +169,21 @@ def check_fairseq_config(fairseq_path: str, model_dict: dict):
     if not model_dict["--config-dir"]:
         return True
 
-
-    config_file = join(fairseq_path, model_dict["--config-dir"], f"{model_dict['--config-name']}.yaml")
+    config_file = join(
+        fairseq_path, model_dict["--config-dir"], f"{model_dict['--config-name']}.yaml"
+    )
 
     success = True
     try:
-        with open(config_file, 'r') as stream:
+        with open(config_file, "r") as stream:
             d = yaml.safe_load(stream)
 
             for k, v in flatten(d).items():
                 if v == "???":
-                    if k in model_dict["required-args"].keys() or k in model_dict["extra_args"].keys():
+                    if (
+                        k in model_dict["required-args"].keys()
+                        or k in model_dict["extra_args"].keys()
+                    ):
                         continue
                     print(f"Please set {k} in the config file at {config_file}.")
                     success = False
@@ -189,7 +197,8 @@ def check_fairseq_config(fairseq_path: str, model_dict: dict):
 
     return success
 
-def flatten(d, parent_key='', sep='.'):
+
+def flatten(d, parent_key="", sep="."):
     """
     Flattens a dictionary.
 
@@ -210,11 +219,12 @@ def flatten(d, parent_key='', sep='.'):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, collections.abc.MutableMapping):
             items.extend(flatten(v, new_key, sep=sep).items())
         else:
             items.append((new_key, v))
     return dict(items)
+
 
 all_models = {
     "manifest_wav2vec2": {
