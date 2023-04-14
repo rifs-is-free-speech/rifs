@@ -194,20 +194,26 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, d
     type=click.Choice(["1st", "2nd"]),
     help="Features for either first or second iteration  of HUBERT training.",
 )
+@click.option(
+    "--fairseq-path",
+    type=click.Path(exists=True, resolve_path=True),
+    help="Path to the fairseq directory.",
+)
 @click.argument(
     "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
 )
 @click.pass_context
-def hubert_preprocess(ctx, iteration, dataset):
+def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
     """Preprocess DATASET for hubert training"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
             click.echo(f"\titeration: {iteration}")
+            click.echo(f"\tfairseq_path: {fairseq_path}")
             click.echo(f"\tdataset: {dataset}")
 
     if iteration == "1st":
-        hubert_preprocess_1st(ctx=ctx.obj, dataset=dataset)
+        hubert_preprocess_1st(ctx=ctx.obj, fairseq_path=fairseq_path, dataset=dataset)
 
     elif iteration == "2nd":
         hubert_preprocess_2nd(ctx=ctx.obj, dataset=dataset)
