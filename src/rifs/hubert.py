@@ -4,8 +4,6 @@ Preprocessing steps for the Hubert model as outlined in the fairseq Hubert examp
 
 import subprocess
 import os
-import torch
-import torchaudio
 from pathlib import Path
 from typing import Union
 
@@ -169,6 +167,9 @@ def create_tsv(
     -------
     None
     """
+    import torchaudio
+    import torch
+
     assert valid_percent >= 0 and valid_percent <= 1.0
 
     torch.manual_seed(seed)
