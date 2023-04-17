@@ -84,22 +84,12 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         seed=ctx["seed"],
     )
 
-    n_shard = {
-        "train": sum(1 for _ in open(f"{tsv_dir}/train.tsv")),
-        "valid": sum(1 for _ in open(f"{tsv_dir}/valid.tsv")),
-    }
-
-    """n_shard = {
-        "train": 5,
-        "valid": 5,
-    }"""
+    n_shard = 5
 
     for split in ["train", "valid"]:
-        for rank in range(n_shard[split]):
-
-            # Extract MFCC features
+        for rank in range(n_shard):
             result = subprocess.Popen(
-                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard[split]} {rank} {feat_dir}",
+                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard} {rank} {feat_dir}",
                 shell=True,
             ).wait()
 
@@ -108,9 +98,9 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
                 exit(result)
 
         # Learn K-means
-        km_model_path = f"{km_path}/{split}.pt"
+        km_model_path = f"{km_path}/{split}.km"
         result = subprocess.Popen(
-            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard[split]} {km_model_path} {n_cluster} --percent 0.1",
+            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard} {km_model_path} {n_cluster} --percent 0.1",
             shell=True,
         ).wait()
 
@@ -119,9 +109,9 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
             exit(result)
 
         # K-means applications
-        for rank in range(n_shard[split]):
+        for rank in range(n_shard):
             result = subprocess.Popen(
-                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard[split]} {rank} {lab_dir}",
+                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard} {rank} {lab_dir}",
                 shell=True,
             ).wait()
 
@@ -130,12 +120,14 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
                 exit(result)
 
         # Merge shards
-        with open(os.path.join(lab_dir, f"{split}.pt"), "w+") as f:
-            for rank in range(n_shard[split]):
-                f.write(f"{feat_dir}/{split}_{rank}_{n_shard[split]}.pt\n")
+        with open(os.path.join(lab_dir, f"{split}.km"), "w+") as f:
+            for rank in range(n_shard):
+                with open(os.path.join(lab_dir, f"{split}_{rank}_{n_shard}.km")) as f2:
+                    f.write(f2.read())
+                #f.write(f"{lab_dir}/{split}_{rank}_{n_shard}.km\n")
 
     # Create a dummy dict
-    with open(os.path.join(lab_dir, "dict.pt.txt"), "w+") as f:
+    with open(os.path.join(lab_dir, "dict.km.txt"), "w+") as f:
         for x in range(n_cluster):
             f.write(f"{x} 1\n")
 

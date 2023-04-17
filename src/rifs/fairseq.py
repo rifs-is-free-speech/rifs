@@ -310,7 +310,7 @@ all_models = {
             "distributed_training.distributed_world_size": None,
         },
         "extra_args": {
-            """task.labels='["pt"]'""": None,
+            """task.labels='["km"]'""": None,
             "model.label_rate=100": None,
         },
         "pos_arg": None,
