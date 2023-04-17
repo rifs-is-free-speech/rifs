@@ -121,7 +121,7 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
             exit(result)
 
         # K-means applications
-        for rank in range(n_shard):
+        for rank in range(n_shard[split]):
             result = subprocess.Popen(
                 f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard[split]} {rank} {lab_dir}",
                 shell=True,
