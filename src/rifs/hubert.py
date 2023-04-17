@@ -86,9 +86,14 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         seed=ctx["seed"],
     )
 
-    n_shard = {
+    """n_shard = {
         "train": sum(1 for _ in open(f"{tsv_dir}/train.tsv")),
         "valid": sum(1 for _ in open(f"{tsv_dir}/valid.tsv")),
+    }"""
+
+    n_shard = {
+        "train": 5,
+        "valid": 5,
     }
 
     for split in ["train", "valid"]:
