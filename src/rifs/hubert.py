@@ -5,10 +5,10 @@ Preprocessing steps for the Hubert model as outlined in the fairseq Hubert examp
 import subprocess
 import os
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 
-def hubert_preprocess_1st(ctx, fairseq_path: str, dataset: str) -> None:
+def hubert_preprocess_1st(ctx, fairseq_path: str, dataset: str, multiprocess: int = 0) -> None:
     """
     python preprocess.py --root-dir /home/datasets --feat-type mfcc --exp-dir ./exp --num-cluster 100
 
@@ -20,6 +20,10 @@ def hubert_preprocess_1st(ctx, fairseq_path: str, dataset: str) -> None:
         The path to the fairseq repository.
     dataset : str
         The name of the dataset to preprocess.
+    multiprocess : int, optional
+        The number of processes to use for the preprocessing steps. (Default: 0)
+        -1 will compute all steps in parallel at once. 0 will compute all steps in sequence.
+        Any other number will compute all steps in parallel using that amount of processes.
 
     Returns
     -------
@@ -28,7 +32,7 @@ def hubert_preprocess_1st(ctx, fairseq_path: str, dataset: str) -> None:
     if ctx["verbose"]:
         print("HUBERT preprocessing started...")
 
-    fairseq_hubert_preprocess(ctx, fairseq_path, dataset)
+    fairseq_hubert_preprocess(ctx, fairseq_path, dataset, multiprocess)
 
 
 def hubert_preprocess_2nd(ctx, dataset: str) -> None:
@@ -44,7 +48,7 @@ def hubert_preprocess_2nd(ctx, dataset: str) -> None:
     """
 
 
-def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
+def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str, multiprocess: int) -> None:
     """
     Run the preprocessing steps as outlined in the fairseq Hubert example:
     https://github.com/facebookresearch/fairseq/tree/main/examples/hubert/simple_kmeans
@@ -57,6 +61,8 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         The path to the fairseq repository.
     dataset : str
         The name of the dataset to preprocess.
+    multiprocess : int
+        The number of processes to run at once to use for the preprocessing steps.
 
     Returns
     -------
@@ -84,33 +90,29 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         seed=ctx["seed"],
     )
 
-    n_shard = {
-        "train": sum(1 for _ in open(f"{tsv_dir}/train.tsv")),
-        "valid": sum(1 for _ in open(f"{tsv_dir}/valid.tsv")),
-    }
-
-    """n_shard = {
-        "train": 5,
-        "valid": 5,
-    }"""
+    n_shard = 5
 
     for split in ["train", "valid"]:
-        for rank in range(n_shard[split]):
 
-            # Extract MFCC features
-            result = subprocess.Popen(
-                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard[split]} {rank} {feat_dir}",
-                shell=True,
-            ).wait()
+        commands = []
+        for rank in range(n_shard):
+            commands.append(
+                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard} {rank} {feat_dir}"
+            )
 
-            if result != 0:
-                print(f"HUBERT preprocessing failed with exit code {result}!")
-                exit(result)
+        if multiprocess == 0:
+            run_consecutive_commands(commands)
+        elif multiprocess == -1: # Use all available cores
+            run_concurrent_commands(commands, n_shard)
+        else:
+            assert multiprocess > 0, "multiprocess must be > 0"
+            assert multiprocess <= n_shard, "multiprocess must be <= n_shard"
+            run_concurrent_commands(commands, multiprocess)
 
         # Learn K-means
-        km_model_path = f"{km_path}/{split}.pt"
+        km_model_path = f"{km_path}/{split}.km"
         result = subprocess.Popen(
-            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard[split]} {km_model_path} {n_cluster} --percent 0.1",
+            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard} {km_model_path} {n_cluster} --percent 0.1",
             shell=True,
         ).wait()
 
@@ -119,9 +121,9 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
             exit(result)
 
         # K-means applications
-        for rank in range(n_shard[split]):
+        for rank in range(n_shard):
             result = subprocess.Popen(
-                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard[split]} {rank} {lab_dir}",
+                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard} {rank} {lab_dir}",
                 shell=True,
             ).wait()
 
@@ -130,12 +132,14 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
                 exit(result)
 
         # Merge shards
-        with open(os.path.join(lab_dir, f"{split}.pt"), "w+") as f:
-            for rank in range(n_shard[split]):
-                f.write(f"{feat_dir}/{split}_{rank}_{n_shard[split]}.pt\n")
+        with open(os.path.join(lab_dir, f"{split}.km"), "w+") as f:
+            for rank in range(n_shard):
+                with open(os.path.join(lab_dir, f"{split}_{rank}_{n_shard}.km")) as f2:
+                    f.write(f2.read())
+                #f.write(f"{lab_dir}/{split}_{rank}_{n_shard}.km\n")
 
     # Create a dummy dict
-    with open(os.path.join(lab_dir, "dict.pt.txt"), "w+") as f:
+    with open(os.path.join(lab_dir, "dict.km.txt"), "w+") as f:
         for x in range(n_cluster):
             f.write(f"{x} 1\n")
 
@@ -194,3 +198,54 @@ def create_tsv(
             print(f"{fname.relative_to(root_dir)}\t{frames}", file=dest)
     if valid_f is not None:
         valid_f.close()
+
+
+def run_consecutive_commands(commands: List[str]) -> None:
+    """
+    Run a list of commands sequentially. This function will block until all commands are finished.
+
+    Parameters
+    ----------
+    commands : list of str
+        The commands to run.
+    """
+
+    for command in commands:
+        result = subprocess.Popen(
+            command,
+            shell=True,
+        ).wait()
+
+        if result != 0:
+            print(f"HUBERT preprocessing failed with exit code {result}!")
+            print(f"At command: {command}")
+            exit(result)
+
+def run_concurrent_commands(commands: List[str], n = 5) -> None:
+    """
+    Run a list of commands in parallel. This function will block until all commands are finished. 
+    Run a maximum of n commands in parallel.
+    
+    Parameters
+    ----------
+    commands : list of str
+        The commands to run.
+    n : int
+        The maximum number of commands to run in parallel.
+    
+    Returns
+    -------
+    None
+    """
+
+    for j in range(max(int(len(commands) / n), 1)):
+        procs = [subprocess.Popen(i, shell=True) for i in commands[j * n: min((j + 1) * n, len(commands))]]
+        for p in procs:
+            exit_code = p.wait()
+
+            if exit_code != 0:
+                print(f"HUBERT preprocessing failed with exit code {exit_code}!")
+                print(f"At command: {p.args}")
+                exit(exit_code)
+
+

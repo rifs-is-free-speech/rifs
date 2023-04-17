@@ -199,21 +199,28 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, d
     type=click.Path(exists=True, resolve_path=True),
     help="Path to the fairseq directory.",
 )
+@click.option(
+    "--multiprocess",
+    type=int,
+    default=0,
+    help="Number of processes to use for feature extraction.",
+)
 @click.argument(
     "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
 )
 @click.pass_context
-def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
+def hubert_preprocess(ctx, iteration, fairseq_path, dataset, multiprocess):
     """Preprocess DATASET for hubert training"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
             click.echo(f"\titeration: {iteration}")
             click.echo(f"\tfairseq_path: {fairseq_path}")
+            click.echo(f"\tmultiprocess: {multiprocess}")
             click.echo(f"\tdataset: {dataset}")
 
     if iteration == "1st":
-        hubert_preprocess_1st(ctx=ctx.obj, fairseq_path=fairseq_path, dataset=dataset)
+        hubert_preprocess_1st(ctx=ctx.obj, fairseq_path=fairseq_path, dataset=dataset, multiprocess=multiprocess)
 
     elif iteration == "2nd":
         hubert_preprocess_2nd(ctx=ctx.obj, dataset=dataset)
