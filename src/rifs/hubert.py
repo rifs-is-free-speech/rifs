@@ -4,8 +4,6 @@ Preprocessing steps for the Hubert model as outlined in the fairseq Hubert examp
 
 import subprocess
 import os
-import torch
-import torchaudio
 from pathlib import Path
 from typing import Union
 
@@ -77,7 +75,6 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
     os.makedirs(km_path, exist_ok=True)
     os.makedirs(lab_dir, exist_ok=True)
 
-    n_shard = 5
     n_cluster = 100
 
     create_tsv(
@@ -87,12 +84,22 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         seed=ctx["seed"],
     )
 
+    """n_shard = {
+        "train": sum(1 for _ in open(f"{tsv_dir}/train.tsv")),
+        "valid": sum(1 for _ in open(f"{tsv_dir}/valid.tsv")),
+    }"""
+
+    n_shard = {
+        "train": 5,
+        "valid": 5,
+    }
+
     for split in ["train", "valid"]:
-        for rank in range(n_shard):
+        for rank in range(n_shard[split]):
 
             # Extract MFCC features
             result = subprocess.Popen(
-                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard} {rank} {feat_dir}",
+                f"python {hubert_example_path}/dump_mfcc_feature.py {tsv_dir} {split} {n_shard[split]} {rank} {feat_dir}",
                 shell=True,
             ).wait()
 
@@ -103,7 +110,7 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
         # Learn K-means
         km_model_path = f"{km_path}/{split}.pt"
         result = subprocess.Popen(
-            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard} {km_model_path} {n_cluster} --percent 0.1",
+            f"python {hubert_example_path}/learn_kmeans.py {feat_dir} {split} {n_shard[split]} {km_model_path} {n_cluster} --percent 0.1",
             shell=True,
         ).wait()
 
@@ -112,9 +119,9 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
             exit(result)
 
         # K-means applications
-        for rank in range(n_shard):
+        for rank in range(n_shard[split]):
             result = subprocess.Popen(
-                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard} {rank} {lab_dir}",
+                f"python {hubert_example_path}/dump_km_label.py {feat_dir} {split} {km_model_path} {n_shard[split]} {rank} {lab_dir}",
                 shell=True,
             ).wait()
 
@@ -124,8 +131,8 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
 
         # Merge shards
         with open(os.path.join(lab_dir, f"{split}.pt"), "w+") as f:
-            for rank in range(n_shard):
-                f.write(f"{feat_dir}/{split}_{rank}_{n_shard}.pt\n")
+            for rank in range(n_shard[split]):
+                f.write(f"{feat_dir}/{split}_{rank}_{n_shard[split]}.pt\n")
 
     # Create a dummy dict
     with open(os.path.join(lab_dir, "dict.pt.txt"), "w+") as f:
@@ -160,6 +167,9 @@ def create_tsv(
     -------
     None
     """
+    import torchaudio
+    import torch
+
     assert valid_percent >= 0 and valid_percent <= 1.0
 
     torch.manual_seed(seed)
