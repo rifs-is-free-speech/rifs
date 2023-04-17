@@ -79,17 +79,17 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
 
     n_cluster = 100
 
-    n_shard = {
-        "train": sum(1 for _ in open(f"{tsv_dir}/train.tsv")),
-        "valid": sum(1 for _ in open(f"{tsv_dir}/valid.tsv")),
-    }
-
     create_tsv(
         f"{ctx['data_path']}/raw/{dataset}/alignments",
         tsv_dir,
         valid_percent=0.1,
         seed=ctx["seed"],
     )
+
+    n_shard = {
+        "train": sum(1 for _ in open(f"{tsv_dir}/train.tsv")),
+        "valid": sum(1 for _ in open(f"{tsv_dir}/valid.tsv")),
+    }
 
     for split in ["train", "valid"]:
         for rank in range(n_shard[split]):
