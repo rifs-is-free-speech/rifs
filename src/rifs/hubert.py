@@ -124,7 +124,7 @@ def fairseq_hubert_preprocess(ctx, fairseq_path: str, dataset: str) -> None:
             for rank in range(n_shard):
                 with open(os.path.join(lab_dir, f"{split}_{rank}_{n_shard}.km")) as f2:
                     f.write(f2.read())
-                #f.write(f"{lab_dir}/{split}_{rank}_{n_shard}.km\n")
+                # f.write(f"{lab_dir}/{split}_{rank}_{n_shard}.km\n")
 
     # Create a dummy dict
     with open(os.path.join(lab_dir, "dict.km.txt"), "w+") as f:

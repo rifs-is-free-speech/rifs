@@ -127,15 +127,24 @@ def download_dataset(ctx, dataset):
     help="The path to the model to use for alignment. Can be a huggingface model or a local path.",
     type=str,
 )
+@click.option(
+    "--max-duration",
+    default=15,
+    help="Maximum duration of the audio files in seconds. Default: 10",
+    type=float,
+)
 @click.argument(
     "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
 )
 @click.pass_context
-def align(ctx, alignment_method, model, dataset):
+def align(ctx, alignment_method, model, max_duration, dataset):
     """Align DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Align parameters:")
+            click.echo("\talignment_method: " + alignment_method)
+            click.echo("\tmodel: " + model)
+            click.echo("\tmax_duration: " + str(max_duration))
             click.echo("\tdataset: " + dataset)
         click.echo(f"Aligning {dataset}")
 
@@ -143,6 +152,7 @@ def align(ctx, alignment_method, model, dataset):
         data_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
         align_method=alignment_methods[alignment_method],
         model=model,
+        max_duration=max_duration,
         verbose=ctx.obj["verbose"],
         quiet=ctx.obj["quiet"],
     )
