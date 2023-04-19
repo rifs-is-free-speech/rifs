@@ -124,6 +124,7 @@ def download_dataset(ctx, dataset):
 )
 @click.option(
     "--model",
+    default="Alvenir/wav2vec2-base-da-ft-nst",
     help="The path to the model to use for alignment. Can be a huggingface model or a local path.",
     type=str,
 )
