@@ -172,25 +172,29 @@ def align(ctx, alignment_method, model, max_duration, dataset):
     help="Preprocess with simulated room acoustics.",
 )
 @click.option(
-    "--with-voice-conversion", is_flag=True, help="Preprocess with voice conversion."
+    "--with-speed-modification",
+    type=float,
+    help="Preprocess with speed modification.",
+    default=1.0,
 )
 @click.argument(
     "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
 )
 @click.pass_context
-def augment(ctx, with_noise_pack, with_room_simulation, with_voice_conversion, dataset):
+def augment(ctx, with_noise_pack, with_room_simulation, with_speed_conversion, dataset):
     """Augment DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
             click.echo(f"\twith_noise_pack: {with_noise_pack}")
             click.echo(f"\twith_room_simulation: {with_room_simulation}")
-            click.echo(f"\twith_voice_conversion: {with_voice_conversion}")
+            click.echo(f"\twith_speed_modification: {with_speed_conversion}")
 
     augment_all(
         source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
         target_path=join(abspath(ctx.obj["data_path"]), "augmented", dataset),
         with_room_simulation=with_room_simulation,
+        speed=with_speed_conversion,
         noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack),
         recursive=True,
     )
