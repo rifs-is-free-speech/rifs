@@ -1,5 +1,6 @@
 """CLI for rifs package. Contains all the commands that the library supports.
 The CLI is written with click."""
+from __future__ import annotations
 
 import click
 from art import text2art
