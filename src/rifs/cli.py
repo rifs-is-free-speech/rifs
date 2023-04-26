@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 from art import text2art
-from os.path import join, abspath
+from os.path import join, abspath, exists
 
 from rifs.utils import is_package_installed
 from rifs import __version__
@@ -15,6 +15,9 @@ from rifs.fairseq import all_models, run_fairseq_pretrain
 from rifsdatasets import all_datasets, merge_rifsdatasets
 from rifsalignment import align_csv, alignment_methods
 from rifsaugmentation import augment_all
+
+extra_dataset_choice = "Custom"
+dataset_choices = list(all_datasets.keys()) + [extra_dataset_choice]
 
 
 @click.group(chain=True, invoke_without_command=True)
@@ -48,9 +51,15 @@ from rifsaugmentation import augment_all
     type=click.Path(exists=True, resolve_path=True),
     help="Path to the noise directory. Default: noise",
 )
+@click.option(
+    "--custom-dataset",
+    default=None,
+    type=str,
+    help="Name of a custom dataset. Default: None",
+)
 @click.pass_context
 def cli(
-    ctx, version, verbose, quiet, seed, data_path, model_path, output_path, noise_path
+    ctx, version, verbose, quiet, seed, data_path, model_path, output_path, noise_path, custom_dataset
 ):
     """CLI for rifs package. Contains all the commands that the library supports.
     The CLI is written with click."""
@@ -71,6 +80,7 @@ def cli(
         (model_path, "model_path"),
         (output_path, "output_path"),
         (noise_path, "noise_path"),
+        (custom_dataset, "custom_dataset"),
     ]
     for param, param_name in params:
         ctx.obj[param_name] = param
@@ -119,8 +129,10 @@ def download_dataset(ctx, dataset):
 @cli.command()
 @click.option(
     "--specify-dir",
+    "-s",
     type=str,
     default=None,
+    multiple=True,
     help=(
         "Specify the directory to use for the dataset. If not set will copy everything. "
         "Useful to copy only, for example, the alignments. Default: None"
@@ -139,16 +151,18 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
             click.echo("\tnew_dataset: " + new_dataset)
         click.echo(f"Merging {', '.join(dataset)} into {new_dataset}")
 
-    src_dataset = [join(ctx.obj["data_path"], "raw", d) for d in dataset]
     assert len(dataset) > 1, "You need to provide at least two datasets to merge."
-    trg_dataset = join(ctx.obj["data_path"], "raw", new_dataset)
 
-    specify_dirs = [specify_dir] if specify_dir else None
+    src_dataset = [join(ctx.obj["data_path"], "raw", d) for d in dataset]
+    for i, d in enumerate(src_dataset):
+        assert exists(d), f"Dataset {dataset[i]} does not exist."
+
+    trg_dataset = join(ctx.obj["data_path"], "raw", new_dataset)
 
     merge_rifsdatasets(
         src_dataset=src_dataset,
         trg_dataset=trg_dataset,
-        specify_dirs=specify_dirs,
+        specify_dirs=specify_dir,
         verbose=ctx.obj["verbose"],
         quiet=ctx.obj["quiet"],
     )
@@ -176,7 +190,7 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
     type=float,
 )
 @click.argument(
-    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
 def align(ctx, alignment_method, model, max_duration, dataset):
@@ -189,6 +203,11 @@ def align(ctx, alignment_method, model, max_duration, dataset):
             click.echo("\tmax_duration: " + str(max_duration))
             click.echo("\tdataset: " + dataset)
         click.echo(f"Aligning {dataset}")
+
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
 
     align_csv(
         data_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
@@ -219,7 +238,7 @@ def align(ctx, alignment_method, model, max_duration, dataset):
     default=1.0,
 )
 @click.argument(
-    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
 def augment(ctx, with_noise_pack, with_room_simulation, with_speed_conversion, dataset):
@@ -230,6 +249,11 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_speed_conversion, d
             click.echo(f"\twith_noise_pack: {with_noise_pack}")
             click.echo(f"\twith_room_simulation: {with_room_simulation}")
             click.echo(f"\twith_speed_modification: {with_speed_conversion}")
+
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
 
     augment_all(
         source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
@@ -256,7 +280,7 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_speed_conversion, d
     help="Path to the fairseq directory.",
 )
 @click.argument(
-    "dataset", nargs=1, type=click.Choice(all_datasets.keys(), case_sensitive=False)
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
 def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
@@ -267,6 +291,11 @@ def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
             click.echo(f"\titeration: {iteration}")
             click.echo(f"\tfairseq_path: {fairseq_path}")
             click.echo(f"\tdataset: {dataset}")
+
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
 
     if iteration == "1st":
         hubert_preprocess_1st(ctx=ctx.obj, fairseq_path=fairseq_path, dataset=dataset)
