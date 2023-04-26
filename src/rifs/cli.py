@@ -224,6 +224,7 @@ def align(ctx, alignment_method, model, max_duration, dataset):
 @cli.command()
 @click.option(
     "--with-noise-pack",
+    type=str,
     help="Preprocess with noise pack. If not specified, no noise will be added.",
 )
 @click.option(
@@ -241,26 +242,35 @@ def align(ctx, alignment_method, model, max_duration, dataset):
     "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
-def augment(ctx, with_noise_pack, with_room_simulation, with_speed_conversion, dataset):
+def augment(ctx, with_noise_pack, with_room_simulation, with_speed_modification, dataset):
     """Augment DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
             click.echo(f"\twith_noise_pack: {with_noise_pack}")
             click.echo(f"\twith_room_simulation: {with_room_simulation}")
-            click.echo(f"\twith_speed_modification: {with_speed_conversion}")
+            click.echo(f"\twith_speed_modification: {with_speed_modification}")
 
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
         assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
 
+    augments = []
+    if with_noise_pack:
+        augments.append(with_noise_pack)
+    if with_room_simulation:
+        augments.append("room")
+    if with_speed_modification != 1.0:
+        augments.append(f"speed{with_speed_modification}")
+    augments = "_".join(augments)
+
     augment_all(
-        source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
-        target_path=join(abspath(ctx.obj["data_path"]), "augmented", dataset),
+        source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset, "alignments"),
+        target_path=join(abspath(ctx.obj["data_path"]), "augmented", augments, dataset),
         with_room_simulation=with_room_simulation,
-        speed=with_speed_conversion,
-        noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack),
+        speed=with_speed_modification,
+        noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack) if with_noise_pack else None,
         recursive=True,
     )
 
