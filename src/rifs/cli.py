@@ -230,6 +230,7 @@ def align(ctx, alignment_method, model, max_duration, dataset):
 @click.option(
     "--with-room-simulation",
     is_flag=True,
+    default=False,
     help="Preprocess with simulated room acoustics.",
 )
 @click.option(
