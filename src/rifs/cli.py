@@ -265,6 +265,7 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_speed_modification,
     if with_speed_modification != 1.0:
         augments.append(f"speed{with_speed_modification}")
     augments = "_".join(augments)
+    assert augments, "You need to specify at least one augmentation."
 
     augment_all(
         source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset, "alignments"),
