@@ -115,13 +115,16 @@ def download_dataset(ctx, dataset):
         quiet=ctx.obj["quiet"],
     )
 
+
 @cli.command()
 @click.option(
     "--specify-dir",
     type=str,
     default=None,
-    help=("Specify the directory to use for the dataset. If not set will copy everything. "
-          "Useful to copy only, for example, the alignments. Default: None"),
+    help=(
+        "Specify the directory to use for the dataset. If not set will copy everything. "
+        "Useful to copy only, for example, the alignments. Default: None"
+    ),
 )
 @click.argument("dataset", nargs=-1)
 @click.argument("new_dataset", nargs=1)
@@ -142,10 +145,15 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
 
     specify_dirs = [specify_dir] if specify_dir else None
 
-    merge_rifsdatasets(src_dataset=src_dataset, trg_dataset=trg_dataset, specify_dirs=specify_dirs, verbose=ctx.obj["verbose"], quiet=ctx.obj["quiet"])
+    merge_rifsdatasets(
+        src_dataset=src_dataset,
+        trg_dataset=trg_dataset,
+        specify_dirs=specify_dirs,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
+    )
 
     print(f"Done creating {new_dataset}.")
-
 
 
 @cli.command()
