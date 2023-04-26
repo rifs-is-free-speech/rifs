@@ -12,7 +12,7 @@ from rifs import __version__
 from rifs.hubert import hubert_preprocess_1st, hubert_preprocess_2nd
 
 from rifs.fairseq import all_models, run_fairseq_pretrain
-from rifsdatasets import all_datasets
+from rifsdatasets import all_datasets, merge_rifsdatasets
 from rifsalignment import align_csv, alignment_methods
 from rifsaugmentation import augment_all
 
@@ -114,6 +114,38 @@ def download_dataset(ctx, dataset):
         verbose=ctx.obj["verbose"],
         quiet=ctx.obj["quiet"],
     )
+
+@cli.command()
+@click.option(
+    "--specify-dir",
+    type=str,
+    default=None,
+    help=("Specify the directory to use for the dataset. If not set will copy everything. "
+          "Useful to copy only, for example, the alignments. Default: None"),
+)
+@click.argument("dataset", nargs=-1)
+@click.argument("new_dataset", nargs=1)
+@click.pass_context
+def merge_datasets(ctx, specify_dir, dataset, new_dataset):
+    """Merge DATASET, ... , DATASET into NEW_DATASET"""
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Merge parameters:")
+            click.echo("\tspecify_dir: " + str(specify_dir))
+            click.echo("\tdataset: " + dataset)
+            click.echo("\tnew_dataset: " + new_dataset)
+        click.echo(f"Merging {', '.join(dataset)} into {new_dataset}")
+
+    src_dataset = [join(ctx.obj["data_path"], "raw", d) for d in dataset]
+    assert len(dataset) > 1, "You need to provide at least two datasets to merge."
+    trg_dataset = join(ctx.obj["data_path"], "raw", new_dataset)
+
+    specify_dirs = [specify_dir] if specify_dir else None
+
+    merge_rifsdatasets(src_dataset=src_dataset, trg_dataset=trg_dataset, specify_dirs=specify_dirs, verbose=ctx.obj["verbose"], quiet=ctx.obj["quiet"])
+
+    print(f"Done creating {new_dataset}.")
+
 
 
 @cli.command()
