@@ -153,7 +153,7 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
 
     assert len(dataset) > 1, "You need to provide at least two datasets to merge."
 
-    src_dataset = [join(ctx.obj["data_path"], "raw", d) for d in dataset]
+    src_dataset = [join(ctx.obj["data_path"], d) for d in dataset]
     for i, d in enumerate(src_dataset):
         assert exists(d), f"Dataset {dataset[i]} does not exist."
 
