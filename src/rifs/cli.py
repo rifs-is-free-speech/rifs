@@ -59,7 +59,16 @@ dataset_choices = list(all_datasets.keys()) + [extra_dataset_choice]
 )
 @click.pass_context
 def cli(
-    ctx, version, verbose, quiet, seed, data_path, model_path, output_path, noise_path, custom_dataset
+    ctx,
+    version,
+    verbose,
+    quiet,
+    seed,
+    data_path,
+    model_path,
+    output_path,
+    noise_path,
+    custom_dataset,
 ):
     """CLI for rifs package. Contains all the commands that the library supports.
     The CLI is written with click."""
@@ -206,7 +215,9 @@ def align(ctx, alignment_method, model, max_duration, dataset):
 
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
-        assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        assert exists(
+            join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
 
     align_csv(
@@ -243,7 +254,9 @@ def align(ctx, alignment_method, model, max_duration, dataset):
     "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
-def augment(ctx, with_noise_pack, with_room_simulation, with_speed_modification, dataset):
+def augment(
+    ctx, with_noise_pack, with_room_simulation, with_speed_modification, dataset
+):
     """Augment DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
@@ -254,7 +267,9 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_speed_modification,
 
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
-        assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        assert exists(
+            join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
 
     augments = []
@@ -272,7 +287,9 @@ def augment(ctx, with_noise_pack, with_room_simulation, with_speed_modification,
         target_path=join(abspath(ctx.obj["data_path"]), "augmented", augments, dataset),
         with_room_simulation=with_room_simulation,
         speed=with_speed_modification,
-        noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack) if with_noise_pack else None,
+        noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack)
+        if with_noise_pack
+        else None,
         recursive=True,
     )
 
@@ -306,7 +323,9 @@ def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
 
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
-        assert exists(join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        assert exists(
+            join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
 
     if iteration == "1st":
