@@ -6,16 +6,14 @@ import click
 from art import text2art
 from os.path import join, abspath, exists
 
-from rifs.utils import is_package_installed
 from rifs import __version__
 
-from rifs.hubert import hubert_preprocess_1st, hubert_preprocess_2nd
 
+from rifs.utils import is_package_installed
+from rifs.hubert import hubert_preprocess_1st, hubert_preprocess_2nd
 from rifs.fairseq import all_models, run_fairseq_pretrain
-from rifsdatasets import all_datasets, merge_rifsdatasets
-from rifsalignment import align_csv, alignment_methods
-from rifsaugmentation import augment_all
-from rifstrain import finetune as finetune_rifs
+from rifsdatasets import all_datasets
+from rifsalignment import alignment_methods
 
 extra_dataset_choice = "Custom"
 dataset_choices = list(all_datasets.keys()) + [extra_dataset_choice]
@@ -170,6 +168,8 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
 
     trg_dataset = join(ctx.obj["data_path"], "custom", new_dataset)
 
+    from rifsdatasets import merge_rifsdatasets
+
     merge_rifsdatasets(
         src_dataset=src_dataset,
         trg_dataset=trg_dataset,
@@ -225,6 +225,8 @@ def align(ctx, alignment_method, model, max_duration, dataset):
             join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
         ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
+
+    from rifsalignment import align_csv
 
     align_csv(
         data_path=join(abspath(ctx.obj["data_path"]), folder, dataset),
@@ -291,6 +293,8 @@ def augment(
         augments.append(f"speed{with_speed_modification}")
     augments = "_".join(augments)
     assert augments, "You need to specify at least one augmentation."
+
+    from rifsaugmentation import augment_all
 
     augment_all(
         source_path=join(abspath(ctx.obj["data_path"]), folder, dataset, "alignments"),
@@ -408,6 +412,8 @@ def finetune(ctx, pretrained_model, hours, minutes, dataset):
         if not is_package_installed(package):
             click.echo(f"Please install the '{package}' package to use this command.")
             exit(1)
+
+    from rifstrain import finetune as finetune_rifs
 
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
