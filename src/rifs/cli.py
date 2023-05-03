@@ -15,6 +15,7 @@ from rifs.fairseq import all_models, run_fairseq_pretrain
 from rifsdatasets import all_datasets, merge_rifsdatasets
 from rifsalignment import align_csv, alignment_methods
 from rifsaugmentation import augment_all
+from rifstrain import finetune as finetune_rifs
 
 extra_dataset_choice = "Custom"
 dataset_choices = list(all_datasets.keys()) + [extra_dataset_choice]
@@ -113,6 +114,7 @@ def download_noise(ctx, noise_pack):
             click.echo("Download parameters:")
             click.echo("\tnoise_pack: " + noise_pack)
         click.echo(f"Trying to download {noise_pack} noise pack from FreeSound.org")
+    raise NotImplementedError
 
 
 @cli.command()
@@ -166,7 +168,7 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
     for i, d in enumerate(src_dataset):
         assert exists(d), f"Dataset {dataset[i]} does not exist."
 
-    trg_dataset = join(ctx.obj["data_path"], "raw", new_dataset)
+    trg_dataset = join(ctx.obj["data_path"], "custom", new_dataset)
 
     merge_rifsdatasets(
         src_dataset=src_dataset,
@@ -213,15 +215,19 @@ def align(ctx, alignment_method, model, max_duration, dataset):
             click.echo("\tdataset: " + dataset)
         click.echo(f"Aligning {dataset}")
 
+    if ctx.obj["custom_dataset"]:
+        folder = "custom"
+    else:
+        folder = "raw"
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
         assert exists(
-            join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
         ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
 
     align_csv(
-        data_path=join(abspath(ctx.obj["data_path"]), "raw", dataset),
+        data_path=join(abspath(ctx.obj["data_path"]), folder, dataset),
         align_method=alignment_methods[alignment_method],
         model=model,
         max_duration=max_duration,
@@ -268,9 +274,13 @@ def augment(
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
         assert exists(
-            join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
         ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
+    if ctx.obj["custom_dataset"]:
+        folder = "custom"
+    else:
+        folder = "raw"
 
     augments = []
     if with_noise_pack:
@@ -283,14 +293,22 @@ def augment(
     assert augments, "You need to specify at least one augmentation."
 
     augment_all(
-        source_path=join(abspath(ctx.obj["data_path"]), "raw", dataset, "alignments"),
-        target_path=join(abspath(ctx.obj["data_path"]), "augmented", augments, dataset),
+        source_path=join(abspath(ctx.obj["data_path"]), folder, dataset, "alignments"),
+        target_path=join(
+            abspath(ctx.obj["data_path"]),
+            "custom",
+            f"{dataset}_{augments}",
+            "alignments",
+        ),
         with_room_simulation=with_room_simulation,
         speed=with_speed_modification,
         noise_path=join(abspath(ctx.obj["noise_path"]), with_noise_pack)
         if with_noise_pack
         else None,
         recursive=True,
+        move_other_files=True,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
     )
 
     print(f"Finished augmenting the {dataset} dataset!")
@@ -324,7 +342,7 @@ def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
         assert exists(
-            join(ctx.obj["data_path"], "raw", ctx.obj["custom_dataset"])
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
         ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
         dataset = ctx.obj["custom_dataset"]
 
@@ -379,8 +397,11 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
 )
 @click.option("--hours", default=0, help="Number of hours to train for. Default: 0")
 @click.option("--minutes", default=1, help="Number of minutes to train for. Default: 1")
+@click.argument(
+    "dataset_path", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
+)
 @click.pass_context
-def finetune(ctx, pretrained_model, hours, minutes):
+def finetune(ctx, pretrained_model, hours, minutes, dataset):
     """Finetune model"""
     requirements = ["transformers", "torch", "soundfile", "librosa"]
     for package in requirements:
@@ -394,3 +415,22 @@ def finetune(ctx, pretrained_model, hours, minutes):
             click.echo(f"\tpretrained_model: {pretrained_model}")
             click.echo(f"\thours: {hours}")
             click.echo(f"\tminutes: {minutes}")
+            click.echo(f"\tdataset: {dataset}")
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
+
+    if ctx.obj["custom_dataset"]:
+        folder = "custom"
+    else:
+        folder = "raw"
+
+    finetune_rifs(
+        csv_train_file=join(
+            abspath(ctx.obj["data_path"]), folder, dataset, "train.csv"
+        ),
+        csv_test_file=join(abspath(ctx.obj["data_path"]), "custom", dataset, "dev.csv"),
+    )
