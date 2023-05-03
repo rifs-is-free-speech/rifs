@@ -147,7 +147,7 @@ def download_dataset(ctx, dataset):
         "Useful to copy only, for example, the alignments. Default: None"
     ),
 )
-@click.argument("dataset", nargs=-1)
+@click.argument("dataset", type=click.Path(exists=True), nargs=-1)
 @click.argument("new_dataset", nargs=1)
 @click.pass_context
 def merge_datasets(ctx, specify_dir, dataset, new_dataset):
@@ -156,16 +156,13 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
         if ctx.obj["verbose"]:
             click.echo("Merge parameters:")
             click.echo("\tspecify_dir: " + str(specify_dir))
-            click.echo("\tdataset: " + dataset)
+            click.echo(f"\tdataset: {', '.join(dataset)}")
             click.echo("\tnew_dataset: " + new_dataset)
         click.echo(f"Merging {', '.join(dataset)} into {new_dataset}")
 
     assert len(dataset) > 1, "You need to provide at least two datasets to merge."
 
-    src_dataset = [join(ctx.obj["data_path"], d) for d in dataset]
-    for i, d in enumerate(src_dataset):
-        assert exists(d), f"Dataset {dataset[i]} does not exist."
-
+    src_dataset = [d for d in dataset]
     trg_dataset = join(ctx.obj["data_path"], "custom", new_dataset)
 
     from rifsdatasets import merge_rifsdatasets
