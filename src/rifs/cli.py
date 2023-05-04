@@ -53,7 +53,7 @@ dataset_choices = list(all_datasets.keys()) + [extra_dataset_choice]
 @click.option(
     "--custom-dataset",
     default=None,
-    type=str,
+    type=click.Path(exists=True, resolve_path=True),
     help="Name of a custom dataset. Default: None",
 )
 @click.pass_context
@@ -392,6 +392,66 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
 
 
 @cli.command()
+@click.argument(
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
+)
+@click.option(
+    "--split-method",
+    type=click.Choice(["random"], case_sensitive=False),
+    default="random",
+    help="How to split the dataset into train, dev and test.",
+)
+@click.option(
+    "--split-ratio",
+    type=click.FLOAT,
+    default=0.8,
+    help="Ratio of train to test/dev data.",
+)
+@click.option(
+    "--split-test-ratio",
+    type=click.FLOAT,
+    default=0.5,
+    help="Ratio of test to dev data.",
+)
+@click.pass_context
+def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
+    """Split dataset into train, dev and test set"""
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Data split parameters:")
+            click.echo(f"\tdataset: {dataset}")
+            click.echo(f"\tsplit_method: {split_method}")
+            click.echo(f"\tsplit_ratio: {split_ratio}")
+            click.echo(f"\tsplit_test_ratio: {split_test_ratio}")
+
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
+
+    from rifsdatasets import split_dataset
+
+    if ctx.obj["custom_dataset"]:
+        folder = "custom"
+    else:
+        folder = "raw"
+
+    split_dataset(
+        dataset_path=join(ctx.obj["data_path"], folder, dataset),
+        split_method=split_method,
+        split_ratio=split_ratio,
+        split_test_ratio=split_test_ratio,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
+        seed=ctx.obj["seed"],
+    )
+
+    print(f"Finished splitting the '{dataset}' dataset!")
+
+
+@cli.command()
 @click.option(
     "--pretrained-model",
     help="Path to the pretrained model on disk or name of Huggingface model to base model on",
@@ -399,7 +459,7 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
 @click.option("--hours", default=0, help="Number of hours to train for. Default: 0")
 @click.option("--minutes", default=1, help="Number of minutes to train for. Default: 1")
 @click.argument(
-    "dataset_path", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
 def finetune(ctx, pretrained_model, hours, minutes, dataset):
