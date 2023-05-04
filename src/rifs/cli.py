@@ -18,15 +18,15 @@ Options:
   --help                 Show this message and exit.
 
 Commands:
-* align              Usage: align [OPTIONS] DATASET
-* augment            Usage: augment [OPTIONS] DATASET
-* datasplit          Usage: datasplit [OPTIONS] DATASET
-* download-dataset   Usage: download_dataset DATASET
-* download-noise     Usage: download_noise NOISE_PACK
-* finetune           Usage: finetune [OPTIONS] DATASET MODEL_NAME
-* hubert-preprocess  Usage: hubert_preprocess [OPTIONS] DATASET
-* merge-datasets     Usage: merge_datasets [OPTIONS] DATASET, ...
-* pretrain           Usage: pretrain MODEL
+  * align              align [OPTIONS] DATASET
+  * augment            augment [OPTIONS] DATASET
+  * datasplit          datasplit [OPTIONS] DATASET
+  * download-dataset   download_dataset DATASET
+  * download-noise     download_noise NOISE_PACK
+  * finetune           finetune [OPTIONS] DATASET MODEL_NAME
+  * hubert-preprocess  hubert_preprocess [OPTIONS] DATASET
+  * merge-datasets     merge_datasets [OPTIONS] DATASET, ...
+  * pretrain           pretrain MODEL
 
 """
 from __future__ import annotations
