@@ -181,7 +181,7 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
 @cli.command()
 @click.option(
     "--alignment-method",
-    default=list(alignment_methods.keys())[0],
+    default=list(alignment_methods.keys())[1],
     help="Alignment method.",
     type=click.Choice(alignment_methods.keys(), case_sensitive=False),
 )
@@ -495,5 +495,5 @@ def finetune(ctx, pretrained_model, hours, minutes, dataset):
         csv_train_file=join(
             abspath(ctx.obj["data_path"]), folder, dataset, "train.csv"
         ),
-        csv_test_file=join(abspath(ctx.obj["data_path"]), "custom", dataset, "dev.csv"),
+        csv_test_file=join(abspath(ctx.obj["data_path"]), folder, dataset, "valid.csv"),
     )
