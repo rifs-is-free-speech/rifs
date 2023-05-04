@@ -1,5 +1,44 @@
 """CLI for rifs package. Contains all the commands that the library supports.
-The CLI is written with click."""
+The CLI is written with click.
+
+       _   __
+ _ __ (_) / _| ___
+| '__|| || |_ / __|
+| |   | ||  _|\__ \
+|_|   |_||_|  |___/
+
+Welcome to the cli of rifs is free speech.
+Usage: rifs [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
+
+  CLI for rifs package. Contains all the commands that the library supports.
+  The CLI is written with click.
+
+  Usage:  rifs [OPTIONS]
+
+Options:
+  --version              Prints the version of the package.
+  --verbose              Enable verbose output.
+  --quiet                Disable all output.
+  --seed INTEGER         Seed for the random number generator. Default: 0
+  --data-path PATH       Path to the data directory. Default: data
+  --model-path PATH      Path to the model directory. Default: models
+  --output-path PATH     Path to the output directory. Default: output
+  --noise-path PATH      Path to the noise directory. Default: noise
+  --custom-dataset PATH  Name of a custom dataset. Default: None
+  --help                 Show this message and exit.
+
+Commands:
+  align              Usage: align [OPTIONS] DATASET
+  augment            Usage: augment [OPTIONS] DATASET
+  datasplit          Usage: datasplit [OPTIONS] DATASET
+  download-dataset   Usage: download_dataset DATASET
+  download-noise     Usage: download_noise NOISE_PACK
+  finetune           Usage: finetune [OPTIONS] DATASET MODEL_NAME
+  hubert-preprocess  Usage: hubert_preprocess [OPTIONS] DATASET
+  merge-datasets     Usage: merge_datasets [OPTIONS] DATASET, ...
+  pretrain           Usage: pretrain MODEL
+
+"""
 from __future__ import annotations
 
 import click
@@ -70,7 +109,10 @@ def cli(
     custom_dataset,
 ):
     """CLI for rifs package. Contains all the commands that the library supports.
-    The CLI is written with click."""
+    The CLI is written with click.
+
+    Usage:  rifs [OPTIONS]
+    """
     if version:
         click.echo(__version__)
         exit(0)
@@ -106,7 +148,7 @@ def cli(
 @click.argument("noise-pack", nargs=1)
 @click.pass_context
 def download_noise(ctx, noise_pack):
-    """Usage:  rifs [OPTIONS] download_noise NOISE_PACK"""
+    """Usage:  download_noise NOISE_PACK"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -121,7 +163,7 @@ def download_noise(ctx, noise_pack):
 )
 @click.pass_context
 def download_dataset(ctx, dataset):
-    """Usage:  rifs [OPTIONS] download_dataset DATASET"""
+    """Usage:  download_dataset DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -151,7 +193,7 @@ def download_dataset(ctx, dataset):
 @click.argument("new_dataset", nargs=1)
 @click.pass_context
 def merge_datasets(ctx, specify_dir, dataset, new_dataset):
-    """Usage:  rifs [OPTIONS] merge_datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
+    """Usage:  merge_datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Merge parameters:")
@@ -202,7 +244,7 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
 )
 @click.pass_context
 def align(ctx, alignment_method, model, max_duration, dataset):
-    """Usage:  rifs [OPTIONS] align [OPTIONS] DATASET"""
+    """Usage:  align [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Align parameters:")
@@ -262,7 +304,7 @@ def align(ctx, alignment_method, model, max_duration, dataset):
 def augment(
     ctx, with_noise_pack, with_room_simulation, with_speed_modification, dataset
 ):
-    """Usage:  rifs [OPTIONS] augment [OPTIONS] DATASET"""
+    """Usage:  augment [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
@@ -332,7 +374,7 @@ def augment(
 )
 @click.pass_context
 def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
-    """Usage:  rifs [OPTIONS] hubert_preprocess [OPTIONS] DATASET"""
+    """Usage:  hubert_preprocess [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
@@ -370,7 +412,7 @@ def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
 )
 @click.pass_context
 def pretrain(ctx, fairseq_path, model, manifest_source):
-    """Usage:  rifs [OPTIONS] pretrain MODEL"""
+    """Usage:  pretrain MODEL"""
     if fairseq_path is None:
         click.echo("Please specify the path to the fairseq directory to pretrain.")
         click.echo("You can do this with the --fairseq-path option.")
@@ -415,7 +457,7 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
 )
 @click.pass_context
 def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
-    """Usage:  rifs [OPTIONS] datasplit [OPTIONS] DATASET"""
+    """Usage:  datasplit [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Data split parameters:")
@@ -483,7 +525,7 @@ def finetune(
     dataset,
     model_name,
 ):
-    """Usage:  rifs [OPTIONS] finetune [OPTIONS] DATASET MODEL_NAME"""
+    """Usage:  finetune [OPTIONS] DATASET MODEL_NAME"""
     requirements = ["transformers", "torch", "soundfile", "librosa"]
     for package in requirements:
         if not is_package_installed(package):
