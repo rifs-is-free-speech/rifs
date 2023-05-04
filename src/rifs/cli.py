@@ -1,19 +1,9 @@
 """CLI for rifs package. Contains all the commands that the library supports.
 The CLI is written with click.
 
-       _   __
- _ __ (_) / _| ___
-| '__|| || |_ / __|
-| |   | ||  _|\__ \
-|_|   |_||_|  |___/
+.. code-block:: text
 
-Welcome to the cli of rifs is free speech.
-Usage: rifs [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
-
-  CLI for rifs package. Contains all the commands that the library supports.
-  The CLI is written with click.
-
-  Usage:  rifs [OPTIONS]
+    Usage: rifs [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
 Options:
   --version              Prints the version of the package.
@@ -28,15 +18,17 @@ Options:
   --help                 Show this message and exit.
 
 Commands:
-  align              Usage: align [OPTIONS] DATASET
-  augment            Usage: augment [OPTIONS] DATASET
-  datasplit          Usage: datasplit [OPTIONS] DATASET
-  download-dataset   Usage: download_dataset DATASET
-  download-noise     Usage: download_noise NOISE_PACK
-  finetune           Usage: finetune [OPTIONS] DATASET MODEL_NAME
-  hubert-preprocess  Usage: hubert_preprocess [OPTIONS] DATASET
-  merge-datasets     Usage: merge_datasets [OPTIONS] DATASET, ...
-  pretrain           Usage: pretrain MODEL
+
+.. code-block:: text
+    align              Usage: align [OPTIONS] DATASET
+    augment            Usage: augment [OPTIONS] DATASET
+    datasplit          Usage: datasplit [OPTIONS] DATASET
+    download-dataset   Usage: download_dataset DATASET
+    download-noise     Usage: download_noise NOISE_PACK
+    finetune           Usage: finetune [OPTIONS] DATASET MODEL_NAME
+    hubert-preprocess  Usage: hubert_preprocess [OPTIONS] DATASET
+    merge-datasets     Usage: merge_datasets [OPTIONS] DATASET, ...
+    pretrain           Usage: pretrain MODEL
 
 """
 from __future__ import annotations
