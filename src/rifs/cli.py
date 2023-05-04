@@ -106,7 +106,7 @@ def cli(
 @click.argument("noise-pack", nargs=1)
 @click.pass_context
 def download_noise(ctx, noise_pack):
-    """Download NOISE-PACK from FreeSound.org"""
+    """Usage:  rifs [OPTIONS] download_noise NOISE_PACK"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -121,7 +121,7 @@ def download_noise(ctx, noise_pack):
 )
 @click.pass_context
 def download_dataset(ctx, dataset):
-    """Download rifs DATASET"""
+    """Usage:  rifs [OPTIONS] download_dataset DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -151,7 +151,7 @@ def download_dataset(ctx, dataset):
 @click.argument("new_dataset", nargs=1)
 @click.pass_context
 def merge_datasets(ctx, specify_dir, dataset, new_dataset):
-    """Merge DATASET, ... , DATASET into NEW_DATASET"""
+    """Usage:  rifs [OPTIONS] merge_datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Merge parameters:")
@@ -202,7 +202,7 @@ def merge_datasets(ctx, specify_dir, dataset, new_dataset):
 )
 @click.pass_context
 def align(ctx, alignment_method, model, max_duration, dataset):
-    """Align DATASET"""
+    """Usage:  rifs [OPTIONS] align [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Align parameters:")
@@ -262,7 +262,7 @@ def align(ctx, alignment_method, model, max_duration, dataset):
 def augment(
     ctx, with_noise_pack, with_room_simulation, with_speed_modification, dataset
 ):
-    """Augment DATASET"""
+    """Usage:  rifs [OPTIONS] augment [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
@@ -332,7 +332,7 @@ def augment(
 )
 @click.pass_context
 def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
-    """Preprocess DATASET for hubert training"""
+    """Usage:  rifs [OPTIONS] hubert_preprocess [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
@@ -370,7 +370,7 @@ def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
 )
 @click.pass_context
 def pretrain(ctx, fairseq_path, model, manifest_source):
-    """Pretrain model unsupervised"""
+    """Usage:  rifs [OPTIONS] pretrain MODEL"""
     if fairseq_path is None:
         click.echo("Please specify the path to the fairseq directory to pretrain.")
         click.echo("You can do this with the --fairseq-path option.")
@@ -415,7 +415,7 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
 )
 @click.pass_context
 def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
-    """Split dataset into train, dev and test set"""
+    """Usage:  rifs [OPTIONS] datasplit [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Data split parameters:")
@@ -454,16 +454,36 @@ def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
 @cli.command()
 @click.option(
     "--pretrained-model",
+    default="Alvenir/wav2vec2-base-da",
     help="Path to the pretrained model on disk or name of Huggingface model to base model on",
 )
 @click.option("--hours", default=0, help="Number of hours to train for. Default: 0")
 @click.option("--minutes", default=1, help="Number of minutes to train for. Default: 1")
+@click.option(
+    "--reduced-training-arguments",
+    is_flag=True,
+    help="Reduce training arguments for testing",
+)
+@click.option("--warmup-steps", default=0, help="Number of warmup steps. Default: 0")
 @click.argument(
     "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
+@click.argument(
+    "model_name",
+    nargs=1,
+)
 @click.pass_context
-def finetune(ctx, pretrained_model, hours, minutes, dataset):
-    """Finetune model"""
+def finetune(
+    ctx,
+    pretrained_model,
+    hours,
+    minutes,
+    reduced_training_arguments,
+    warmup_steps,
+    dataset,
+    model_name,
+):
+    """Usage:  rifs [OPTIONS] finetune [OPTIONS] DATASET MODEL_NAME"""
     requirements = ["transformers", "torch", "soundfile", "librosa"]
     for package in requirements:
         if not is_package_installed(package):
@@ -479,6 +499,12 @@ def finetune(ctx, pretrained_model, hours, minutes, dataset):
             click.echo(f"\thours: {hours}")
             click.echo(f"\tminutes: {minutes}")
             click.echo(f"\tdataset: {dataset}")
+            click.echo(f"\treduced_training_arguments: {reduced_training_arguments}")
+            click.echo(f"\twarmup_steps: {warmup_steps}")
+            click.echo(f"\tmodelname: {model_name}")
+
+    assert warmup_steps >= 0, "Warmup steps must be greater than or equal to 0."
+
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
         assert exists(
@@ -491,9 +517,26 @@ def finetune(ctx, pretrained_model, hours, minutes, dataset):
     else:
         folder = "raw"
 
+    if not ctx.obj["quiet"]:
+        print_string = f"Finetuning the '{dataset}' dataset for "
+        if hours > 0:
+            print_string += f"{hours} hours{'s' if hours > 1 else ''}{' and ' if minutes > 0 else ''}"
+        if minutes > 0:
+            print_string += f"{minutes} minute{'s' if minutes > 1 else ''}"
+        click.echo(print_string)
+
     finetune_rifs(
         csv_train_file=join(
             abspath(ctx.obj["data_path"]), folder, dataset, "train.csv"
         ),
         csv_test_file=join(abspath(ctx.obj["data_path"]), folder, dataset, "valid.csv"),
+        pretrained_path=pretrained_model,
+        hours=hours,
+        minutes=minutes,
+        reduced_training_arguments=reduced_training_arguments,
+        model_save_location=join(ctx.obj["model_path"], model_name),
+        warmup_steps=warmup_steps,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
+        seed=ctx.obj["seed"],
     )
