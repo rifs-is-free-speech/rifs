@@ -676,9 +676,9 @@ def export_table(ctx, experiment_name):
     new_df = pd.DataFrame(results, index=models, columns=index)
 
     caption = (
-        f"Results for {experiment_name}. The best result for each metric is highlighted.",
-        "WER is the word error rate, CER is the character error rate,",
-        "and LSR is the Levenshtein similarity ratio.",
+        f"Results for {experiment_name}. The best result for each metric is highlighted."
+        "WER is the word error rate, CER is the character error rate,"
+        "and LSR is the Levenshtein similarity ratio."
     )
 
     r = new_df.style.format("{:.2f}").to_latex(
