@@ -693,6 +693,6 @@ def export_table(ctx, experiment_name):
     pc.copy(r)
 
     if ctx.obj["verbose"]:
-        click.echo(r)
+        click.echo(r + "\n")
 
-    click.echo("\nTable copied to clipboard.")
+    click.echo("Table copied to clipboard.")
