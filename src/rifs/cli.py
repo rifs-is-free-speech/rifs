@@ -34,11 +34,11 @@ from __future__ import annotations
 import click
 from art import text2art
 from os.path import join, abspath, exists
+from os import makedirs
 
 from rifs import __version__
 
 
-from rifs.utils import is_package_installed
 from rifs.hubert import hubert_preprocess_1st, hubert_preprocess_2nd
 from rifs.fairseq import all_models, run_fairseq_pretrain
 from rifsdatasets import all_datasets
@@ -516,11 +516,6 @@ def finetune(
     model_name,
 ):
     """Usage:  finetune [OPTIONS] DATASET MODEL_NAME"""
-    requirements = ["transformers", "torch", "soundfile", "librosa"]
-    for package in requirements:
-        if not is_package_installed(package):
-            click.echo(f"Please install the '{package}' package to use this command.")
-            exit(1)
 
     from rifstrain import finetune as finetune_rifs
 
@@ -572,3 +567,129 @@ def finetune(
         quiet=ctx.obj["quiet"],
         seed=ctx.obj["seed"],
     )
+
+
+@cli.command()
+@click.option(
+    "--model",
+    default="Alvenir/wav2vec2-base-da",
+    help="Path to the model on disk or name of Huggingface model to evaluate with",
+)
+@click.argument(
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
+)
+@click.argument(
+    "experiment_name",
+    nargs=1,
+)
+@click.pass_context
+def evaluate(
+    ctx,
+    model,
+    dataset,
+    experiment_name,
+):
+    """Usage:  evaluate [OPTIONS] DATASET EXPERIMENT_NAME"""
+
+    from rifstrain import evaluate as evaluate_rifs
+
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Finetune parameters:")
+            click.echo(f"\tmodel: {model}")
+            click.echo(f"\tdataset: {dataset}")
+            click.echo(f"\texperimentname: {experiment_name}")
+
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
+
+    if ctx.obj["custom_dataset"]:
+        folder = "custom"
+    else:
+        folder = "raw"
+
+    output_path = join(ctx.obj["output_path"], experiment_name)
+    if ctx.obj["quiet"] and not ctx.obj["verbose"]:
+        print(f"Creating experiment folder at '{output_path}'")
+    makedirs(output_path, exist_ok=True)
+
+    if not ctx.obj["quiet"]:
+        click.echo(
+            f"Evaluating the '{dataset}' dataset as part of the {experiment_name} experiment."
+        )
+
+    evaluate_rifs(
+        csv_test_file=join(abspath(ctx.obj["data_path"]), folder, dataset, "test.csv"),
+        pretrained_path=model,
+        output_path=output_path,
+        experiment_name=experiment_name,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
+    )
+
+
+@cli.command()
+@click.argument(
+    "experiment_name",
+    nargs=1,
+)
+@click.pass_context
+def export_table(ctx, experiment_name):
+    """Usage:  table EXPERIMENT_NAME"""
+
+    import numpy as np
+    import pandas as pd
+    import pyperclip as pc
+
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Finetune parameters:")
+            click.echo(f"\texperiment_name: {experiment_name}")
+
+    df = pd.read_csv(join(ctx.obj["output_path"], experiment_name, "results.csv"))
+
+    models = df["model"].unique().tolist()
+    datasets = df["dataset"].unique().tolist()
+    metrics = df["metric"].unique().tolist()
+
+    index = pd.MultiIndex.from_product(
+        iterables=[df["dataset"].unique(), df["metric"].unique().tolist()],
+        names=["Dataset", "Metrics"],
+    )
+
+    data = []
+    for model in models:
+        for dataset in datasets:
+            for metric in metrics:
+                val = df.loc[
+                    (df["model"] == model)
+                    & (df["dataset"] == dataset)
+                    & (df["metric"] == metric)
+                ]["value"].values[0]
+                data.append(val)
+    results = np.array(data).reshape(len(models), len(datasets) * len(metrics))
+
+    new_df = pd.DataFrame(results, index=models, columns=index)
+
+    caption = (
+        f"Results for {experiment_name}. The best result for each metric is highlighted.",
+        "WER is the word error rate, CER is the character error rate,",
+        "and LSR is the Levenshtein similarity ratio.",
+    )
+
+    r = new_df.style.format("{:.2f}").to_latex(
+        convert_css=True,
+        hrules=True,
+        position="h!",
+        position_float="centering",
+        multicol_align="c",
+        caption=caption,
+    )
+
+    pc.copy(r)
+    click.echo(r)
+    click.echo("\nTable copied to clipboard.")
