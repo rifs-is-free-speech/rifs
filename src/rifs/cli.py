@@ -21,11 +21,11 @@ Commands:
   - align              align [OPTIONS] DATASET
   - augment            augment [OPTIONS] DATASET
   - datasplit          datasplit [OPTIONS] DATASET
-  - download-dataset   download_dataset DATASET
-  - download-noise     download_noise NOISE_PACK
+  - download-dataset   download-dataset DATASET
+  - download-noise     download-noise NOISE_PACK
   - finetune           finetune [OPTIONS] DATASET MODEL_NAME
-  - hubert-preprocess  hubert_preprocess [OPTIONS] DATASET
-  - merge-datasets     merge_datasets [OPTIONS] DATASET, ...
+  - hubert-preprocess  hubert-preprocess [OPTIONS] DATASET
+  - merge-datasets     merge-datasets [OPTIONS] DATASET, ...
   - pretrain           pretrain MODEL
 
 """
@@ -575,6 +575,11 @@ def finetune(
     default="Alvenir/wav2vec2-base-da",
     help="Path to the model on disk or name of Huggingface model to evaluate with",
 )
+@click.option(
+    "--split",
+    default="test",
+    help="Which split to evaluate on. Default: test",
+)
 @click.argument(
     "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
@@ -586,6 +591,7 @@ def finetune(
 def evaluate(
     ctx,
     model,
+    split,
     dataset,
     experiment_name,
 ):
@@ -623,7 +629,9 @@ def evaluate(
         )
 
     evaluate_rifs(
-        csv_test_file=join(abspath(ctx.obj["data_path"]), folder, dataset, "test.csv"),
+        csv_test_file=join(
+            abspath(ctx.obj["data_path"]), folder, dataset, f"{split}.csv"
+        ),
         pretrained_path=model,
         output_path=output_path,
         experiment_name=experiment_name,
