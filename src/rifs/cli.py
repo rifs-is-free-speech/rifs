@@ -339,9 +339,6 @@ def augment(
         if with_noise_pack
         else None,
         recursive=True,
-        move_other_files=True,
-        verbose=ctx.obj["verbose"],
-        quiet=ctx.obj["quiet"],
     )
 
     print(f"Finished augmenting the {dataset} dataset!")
