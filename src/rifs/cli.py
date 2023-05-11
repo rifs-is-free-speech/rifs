@@ -27,6 +27,8 @@ Commands:
   - hubert-preprocess  hubert-preprocess [OPTIONS] DATASET
   - merge-datasets     merge-datasets [OPTIONS] DATASET, ...
   - pretrain           pretrain MODEL
+  - evaluate           evaluate [OPTIONS] DATASET EXPERIMENT_NAME
+  - export table       export-table EXPERIMENT_NAME
 
 """
 from __future__ import annotations
@@ -138,7 +140,7 @@ def cli(
 @click.argument("noise-pack", nargs=1)
 @click.pass_context
 def download_noise(ctx, noise_pack):
-    """Usage:  download_noise NOISE_PACK"""
+    """Usage:  download-noise NOISE_PACK"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -153,7 +155,7 @@ def download_noise(ctx, noise_pack):
 )
 @click.pass_context
 def download_dataset(ctx, dataset):
-    """Usage:  download_dataset DATASET"""
+    """Usage:  download-dataset DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -183,7 +185,7 @@ def download_dataset(ctx, dataset):
 @click.argument("new_dataset", nargs=1)
 @click.pass_context
 def merge_datasets(ctx, specify_dir, dataset, new_dataset):
-    """Usage:  merge_datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
+    """Usage:  merge-datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Merge parameters:")
@@ -361,7 +363,7 @@ def augment(
 )
 @click.pass_context
 def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
-    """Usage:  hubert_preprocess [OPTIONS] DATASET"""
+    """Usage:  hubert-preprocess [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
@@ -644,7 +646,7 @@ def evaluate(
 )
 @click.pass_context
 def export_table(ctx, experiment_name):
-    """Usage:  table EXPERIMENT_NAME"""
+    """Usage:  export-table EXPERIMENT_NAME"""
 
     import numpy as np
     import pandas as pd
