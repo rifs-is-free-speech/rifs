@@ -697,7 +697,10 @@ def export_table(ctx, experiment_name):
         caption=caption,
     )
 
-    pc.copy(r)
+    try:
+        pc.copy(r)
+    except pc.PyperclipException:
+        click.echo("Table could not be copied to clipboard")
 
     if ctx.obj["verbose"]:
         click.echo(r + "\n")
