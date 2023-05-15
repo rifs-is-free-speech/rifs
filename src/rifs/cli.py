@@ -642,6 +642,45 @@ def evaluate(
 
 @cli.command()
 @click.argument(
+    "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
+)
+@click.pass_context
+def evaluate_alignments(
+    ctx,
+    dataset,
+):
+    """Usage:  evaluate-dataset DATASET"""
+    from rifsalignment import align_experiment_folder
+
+    if not ctx.obj["quiet"]:
+        if ctx.obj["verbose"]:
+            click.echo("Evaluate-dataset parameters:")
+            click.echo(f"\tdataset: {dataset}")
+
+    if dataset.lower() == extra_dataset_choice.lower():
+        assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
+        assert exists(
+            join(ctx.obj["data_path"], "custom", ctx.obj["custom_dataset"])
+        ), f"Dataset '{ctx.obj['custom_dataset']}' does not exist."
+        dataset = ctx.obj["custom_dataset"]
+
+    if ctx.obj["custom_dataset"]:
+        folder = "custom"
+    else:
+        folder = "raw"
+
+    if not ctx.obj["quiet"]:
+        click.echo(f"Evaluating the '{dataset}' dataset for quality of alignments")
+
+    align_experiment_folder(
+        folder_path=join(abspath(ctx.obj["data_path"]), folder, dataset),
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
+    )
+
+
+@cli.command()
+@click.argument(
     "experiment_name",
     nargs=1,
 )
