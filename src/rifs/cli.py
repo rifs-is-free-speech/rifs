@@ -5,30 +5,36 @@ The CLI is written with click.
 
     Usage: rifs [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
-Options:
-  --version              Prints the version of the package.
-  --verbose              Enable verbose output.
-  --quiet                Disable all output.
-  --seed INTEGER         Seed for the random number generator. Default: 0
-  --data-path PATH       Path to the data directory. Default: data
-  --model-path PATH      Path to the model directory. Default: models
-  --output-path PATH     Path to the output directory. Default: output
-  --noise-path PATH      Path to the noise directory. Default: noise
-  --custom-dataset PATH  Name of a custom dataset. Default: None
-  --help                 Show this message and exit.
+      CLI for rifs package. Contains all the commands that the library supports.
+      The CLI is written with click.
 
-Commands:
-  - align              align [OPTIONS] DATASET
-  - augment            augment [OPTIONS] DATASET
-  - datasplit          datasplit [OPTIONS] DATASET
-  - download-dataset   download-dataset DATASET
-  - download-noise     download-noise NOISE_PACK
-  - finetune           finetune [OPTIONS] DATASET MODEL_NAME
-  - hubert-preprocess  hubert-preprocess [OPTIONS] DATASET
-  - merge-datasets     merge-datasets [OPTIONS] DATASET, ...
-  - pretrain           pretrain MODEL
-  - evaluate           evaluate [OPTIONS] DATASET EXPERIMENT_NAME
-  - export table       export-table EXPERIMENT_NAME
+      Usage:  rifs [OPTIONS]
+
+    Options:
+      --version              Prints the version of the package.
+      --verbose              Enable verbose output.
+      --quiet                Disable all output.
+      --seed INTEGER         Seed for the random number generator. Default: 0
+      --data-path PATH       Path to the data directory. Default: data
+      --model-path PATH      Path to the model directory. Default: models
+      --output-path PATH     Path to the output directory. Default: output
+      --noise-path PATH      Path to the noise directory. Default: noise
+      --custom-dataset PATH  Name of a custom dataset. Default: None
+      --help                 Show this message and exit.
+
+    Commands:
+      align                Usage: align [OPTIONS] DATASET
+      augment              Usage: augment [OPTIONS] DATASET
+      datasplit            Usage: datasplit [OPTIONS] DATASET
+      download-dataset     Usage: download-dataset DATASET
+      download-noise       Usage: download-noise NOISE_PACK
+      evaluate             Usage: evaluate [OPTIONS] DATASET EXPERIMENT_NAME
+      evaluate-alignments  Usage: evaluate-dataset DATASET
+      export-table         Usage: export-table EXPERIMENT_NAME
+      finetune             Usage: finetune [OPTIONS] DATASET MODEL_NAME
+      hubert-preprocess    Usage: hubert-preprocess [OPTIONS] DATASET
+      merge-datasets       Usage: merge-datasets [OPTIONS] DATASET, ...
+      pretrain             Usage: pretrain MODEL
 
 """
 from __future__ import annotations
@@ -696,7 +702,9 @@ def export_table(ctx, experiment_name):
             click.echo("Finetune parameters:")
             click.echo(f"\texperiment_name: {experiment_name}")
 
-    df = pd.read_csv(join(ctx.obj["output_path"], experiment_name, "results.csv")).replace(r"_", "-", regex=True)
+    df = pd.read_csv(
+        join(ctx.obj["output_path"], experiment_name, "results.csv")
+    ).replace(r"_", "-", regex=True)
 
     models = df["model"].unique().tolist()
     datasets = df["dataset"].unique().tolist()
@@ -713,9 +721,9 @@ def export_table(ctx, experiment_name):
             for metric in metrics:
                 try:
                     val = df.loc[
-                    (df["model"] == model)
-                    & (df["dataset"] == dataset)
-                    & (df["metric"] == metric)
+                        (df["model"] == model)
+                        & (df["dataset"] == dataset)
+                        & (df["metric"] == metric)
                     ]["value"].values[0]
                     data.append(val)
                 except IndexError:
