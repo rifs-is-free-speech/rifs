@@ -450,8 +450,15 @@ def pretrain(ctx, fairseq_path, model, manifest_source):
     default=0.5,
     help="Ratio of test to dev data.",
 )
+@click.option(
+    "--check-alignments",
+    is_flag=True,
+    help="Check if alignments are correct. Requires model_output",
+)
 @click.pass_context
-def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
+def datasplit(
+    ctx, dataset, split_method, split_ratio, split_test_ratio, check_alignments
+):
     """Usage:  datasplit [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
@@ -460,6 +467,7 @@ def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
             click.echo(f"\tsplit_method: {split_method}")
             click.echo(f"\tsplit_ratio: {split_ratio}")
             click.echo(f"\tsplit_test_ratio: {split_test_ratio}")
+            click.echo(f"\tcheck_alignments: {check_alignments}")
 
     if dataset.lower() == extra_dataset_choice.lower():
         assert ctx.obj["custom_dataset"], "You need to specify a custom dataset."
@@ -480,6 +488,7 @@ def datasplit(ctx, dataset, split_method, split_ratio, split_test_ratio):
         split_method=split_method,
         split_ratio=split_ratio,
         split_test_ratio=split_test_ratio,
+        check_for_bad_alignments=check_alignments,
         verbose=ctx.obj["verbose"],
         quiet=ctx.obj["quiet"],
         seed=ctx.obj["seed"],
