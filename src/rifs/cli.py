@@ -27,6 +27,8 @@ Commands:
   - hubert-preprocess  hubert-preprocess [OPTIONS] DATASET
   - merge-datasets     merge-datasets [OPTIONS] DATASET, ...
   - pretrain           pretrain MODEL
+  - evaluate           evaluate [OPTIONS] DATASET EXPERIMENT_NAME
+  - export table       export-table EXPERIMENT_NAME
 
 """
 from __future__ import annotations
@@ -138,7 +140,7 @@ def cli(
 @click.argument("noise-pack", nargs=1)
 @click.pass_context
 def download_noise(ctx, noise_pack):
-    """Usage:  download_noise NOISE_PACK"""
+    """Usage:  download-noise NOISE_PACK"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -153,7 +155,7 @@ def download_noise(ctx, noise_pack):
 )
 @click.pass_context
 def download_dataset(ctx, dataset):
-    """Usage:  download_dataset DATASET"""
+    """Usage:  download-dataset DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Download parameters:")
@@ -183,7 +185,7 @@ def download_dataset(ctx, dataset):
 @click.argument("new_dataset", nargs=1)
 @click.pass_context
 def merge_datasets(ctx, specify_dir, dataset, new_dataset):
-    """Usage:  merge_datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
+    """Usage:  merge-datasets [OPTIONS] DATASET, ... , DATASET NEW_DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Merge parameters:")
@@ -339,9 +341,6 @@ def augment(
         if with_noise_pack
         else None,
         recursive=True,
-        move_other_files=True,
-        verbose=ctx.obj["verbose"],
-        quiet=ctx.obj["quiet"],
     )
 
     print(f"Finished augmenting the {dataset} dataset!")
@@ -364,7 +363,7 @@ def augment(
 )
 @click.pass_context
 def hubert_preprocess(ctx, iteration, fairseq_path, dataset):
-    """Usage:  hubert_preprocess [OPTIONS] DATASET"""
+    """Usage:  hubert-preprocess [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
         if ctx.obj["verbose"]:
             click.echo("Preprocess parameters:")
@@ -686,7 +685,7 @@ def evaluate_alignments(
 )
 @click.pass_context
 def export_table(ctx, experiment_name):
-    """Usage:  table EXPERIMENT_NAME"""
+    """Usage:  export-table EXPERIMENT_NAME"""
 
     import numpy as np
     import pandas as pd
@@ -697,7 +696,7 @@ def export_table(ctx, experiment_name):
             click.echo("Finetune parameters:")
             click.echo(f"\texperiment_name: {experiment_name}")
 
-    df = pd.read_csv(join(ctx.obj["output_path"], experiment_name, "results.csv"))
+    df = pd.read_csv(join(ctx.obj["output_path"], experiment_name, "results.csv")).replace(r"_", "-", regex=True)
 
     models = df["model"].unique().tolist()
     datasets = df["dataset"].unique().tolist()
@@ -712,12 +711,15 @@ def export_table(ctx, experiment_name):
     for model in models:
         for dataset in datasets:
             for metric in metrics:
-                val = df.loc[
+                try:
+                    val = df.loc[
                     (df["model"] == model)
                     & (df["dataset"] == dataset)
                     & (df["metric"] == metric)
-                ]["value"].values[0]
-                data.append(val)
+                    ]["value"].values[0]
+                    data.append(val)
+                except IndexError:
+                    data.append(0)
     results = np.array(data).reshape(len(models), len(datasets) * len(metrics))
 
     new_df = pd.DataFrame(results, index=models, columns=index)
@@ -737,7 +739,10 @@ def export_table(ctx, experiment_name):
         caption=caption,
     )
 
-    pc.copy(r)
+    try:
+        pc.copy(r)
+    except pc.PyperclipException:
+        click.echo("Table could not be copied to clipboard")
 
     if ctx.obj["verbose"]:
         click.echo(r + "\n")
