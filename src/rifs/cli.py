@@ -657,7 +657,7 @@ def export_table(ctx, experiment_name):
             click.echo("Finetune parameters:")
             click.echo(f"\texperiment_name: {experiment_name}")
 
-    df = pd.read_csv(join(ctx.obj["output_path"], experiment_name, "results.csv"))
+    df = pd.read_csv(join(ctx.obj["output_path"], experiment_name, "results.csv")).replace(r"_", "-", regex=True)
 
     models = df["model"].unique().tolist()
     datasets = df["dataset"].unique().tolist()
@@ -672,12 +672,15 @@ def export_table(ctx, experiment_name):
     for model in models:
         for dataset in datasets:
             for metric in metrics:
-                val = df.loc[
+                try:
+                    val = df.loc[
                     (df["model"] == model)
                     & (df["dataset"] == dataset)
                     & (df["metric"] == metric)
-                ]["value"].values[0]
-                data.append(val)
+                    ]["value"].values[0]
+                    data.append(val)
+                except IndexError:
+                    data.append(0)
     results = np.array(data).reshape(len(models), len(datasets) * len(metrics))
 
     new_df = pd.DataFrame(results, index=models, columns=index)
