@@ -295,12 +295,22 @@ def align(ctx, alignment_method, model, max_duration, dataset):
     help="Preprocess with speed modification.",
     default=1.0,
 )
+@click.option(
+    "--include-audio-folder",
+    is_flag=True,
+    help="Include the audio folder in data augmentation.",
+)
 @click.argument(
     "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
 @click.pass_context
 def augment(
-    ctx, with_noise_pack, with_room_simulation, with_speed_modification, dataset
+    ctx,
+    with_noise_pack,
+    with_room_simulation,
+    with_speed_modification,
+    include_audio_folder,
+    dataset,
 ):
     """Usage:  augment [OPTIONS] DATASET"""
     if not ctx.obj["quiet"]:
@@ -333,13 +343,25 @@ def augment(
 
     from rifsaugmentation import augment_all
 
+    if with_noise_pack:
+        if not exists(with_noise_pack):
+            if not ctx.obj["quiet"]:
+                click.echo(
+                    f"Could not find noise pack '{with_noise_pack}'. Will try to find it in 'data/noise'"
+                )
+            with_noise_pack = join(ctx.obj["data_path"], "noise", with_noise_pack)
+        assert exists(
+            with_noise_pack
+        ), f"Noise pack '{with_noise_pack}' does not exist."
+        if not ctx.obj["quiet"]:
+            click.echo(f"Found '{with_noise_pack}'")
+
     augment_all(
-        source_path=join(abspath(ctx.obj["data_path"]), folder, dataset, "alignments"),
+        source_path=join(ctx.obj["data_path"], folder, dataset),
         target_path=join(
-            abspath(ctx.obj["data_path"]),
+            ctx.obj["data_path"],
             "custom",
             f"{dataset}_{augments}",
-            "alignments",
         ),
         with_room_simulation=with_room_simulation,
         speed=with_speed_modification,
@@ -347,6 +369,10 @@ def augment(
         if with_noise_pack
         else None,
         recursive=True,
+        move_other_files=True,
+        skip_audio_folder=not include_audio_folder,
+        verbose=ctx.obj["verbose"],
+        quiet=ctx.obj["quiet"],
     )
 
     print(f"Finished augmenting the {dataset} dataset!")
