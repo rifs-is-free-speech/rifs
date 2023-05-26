@@ -620,6 +620,11 @@ def finetune(
     default="test",
     help="Which split to evaluate on. Default: test",
 )
+@click.option(
+    "--spellcheck-model",
+    type=click.Path(exists=True, resolve_path=True),
+    help="Path to spellcheck model. Default: None",
+)
 @click.argument(
     "dataset", nargs=1, type=click.Choice(dataset_choices, case_sensitive=False)
 )
@@ -632,6 +637,7 @@ def evaluate(
     ctx,
     model,
     split,
+    spellcheck_model,
     dataset,
     experiment_name,
 ):
@@ -643,6 +649,8 @@ def evaluate(
         if ctx.obj["verbose"]:
             click.echo("Finetune parameters:")
             click.echo(f"\tmodel: {model}")
+            click.echo(f"\tsplit: {split}")
+            click.echo(f"\tspellcheck_model: {spellcheck_model}")
             click.echo(f"\tdataset: {dataset}")
             click.echo(f"\texperimentname: {experiment_name}")
 
@@ -675,6 +683,7 @@ def evaluate(
         pretrained_path=model,
         output_path=output_path,
         experiment_name=experiment_name,
+        spellcheck_model=spellcheck_model,
         verbose=ctx.obj["verbose"],
         quiet=ctx.obj["quiet"],
     )
